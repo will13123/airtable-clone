@@ -52,5 +52,16 @@ export const authConfig = {
         id: user.id,
       },
     }),
+    async redirect({ url, baseUrl }) {
+      // Redirect to /dashboard after sign-in
+      if (url.startsWith("/api/auth/signin")) {
+        return `${baseUrl}/dashboard`;
+      }
+      // Logout to homepage
+      if (url.startsWith("/api/auth/signout")) {
+        return baseUrl;
+      }
+      return baseUrl;
+    },
   },
 } satisfies NextAuthConfig;

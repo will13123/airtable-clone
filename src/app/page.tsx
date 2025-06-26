@@ -4,6 +4,7 @@ import { LatestPost } from "~/app/_components/post";
 import { auth } from "~/server/auth";
 import { api, HydrateClient } from "~/trpc/server";
 import Image from "next/image"
+import { redirect } from "next/navigation";
 
 export default async function Home() {
   const hello = await api.post.hello({ text: "from tRPC" });
@@ -11,6 +12,9 @@ export default async function Home() {
 
   if (session?.user) {
     void api.post.getLatest.prefetch();
+    if (session?.user) {
+      redirect("/dashboard");
+    }
   }
 
   return (
@@ -29,19 +33,14 @@ export default async function Home() {
           </h1>
           <div className="flex flex-col items-center gap-2">
             <div className="flex flex-col items-center justify-center gap-4">
-              <p className="text-center text-2xl text-black">
-                {session && <span>Logged in as {session.user?.name}</span>}
-              </p>
               <Link
                 href={session ? "/api/auth/signout" : "/api/auth/signin"}
                 className="rounded-full bg-teal-300 text-black px-20 py-6 font-semibold no-underline transition hover:bg-teal-200"
               >
-                {session ? "Sign out" : "Sign in"}
+              {session ? "Sign out" : "Sign in"}
               </Link>
             </div>
           </div>
-
-          {session?.user && <LatestPost />}
         </div>
       </main>
     </HydrateClient>
