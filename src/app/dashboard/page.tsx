@@ -17,6 +17,8 @@ export default async function Dashboard() {
 
   const username = session.user?.name || session.user?.email?.split("@")[0] || "User";
   const profileImage = session.user?.image || "https://via.placeholder.com/40";
+  const name = session.user?.name ?? "";
+  const email = session.user?.email ?? ""; 
 
   
 
@@ -40,7 +42,7 @@ export default async function Dashboard() {
           </button>
         </div>
         <div className="flex-row justify-items-end flex-1">
-          <Dropdown profileImage={profileImage} name={session.user?.name} email={session.user?.email}/>
+          <Dropdown profileImage={profileImage} name={name} email={email}/>
         </div>
       </header>
       <Sidebar/>

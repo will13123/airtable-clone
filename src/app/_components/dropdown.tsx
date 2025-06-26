@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 type DropdownProps = {
   profileImage: string;
-  name: string | null | undefined;
-  email: string | null | undefined
+  name: string;
+  email: string
 };
 
 export default function Dropdown({profileImage, name, email}: DropdownProps) {
