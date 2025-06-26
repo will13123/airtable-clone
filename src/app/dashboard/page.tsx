@@ -1,10 +1,11 @@
 import { auth } from "~/server/auth";
-import Link from "next/link";
 
 import Image from "next/image";
 import Dropdown from "../_components/dropdown";
 import Sidebar from "../_components/sidebar";
 import ToggleButton from "../_components/toggleButton";
+import CreateBase from "../_components/createBase";
+import BaseList from "../_components/baseList";
 
 
 export default async function Dashboard() {
@@ -23,25 +24,6 @@ export default async function Dashboard() {
     <div className="bg-neutral-300">
       <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-6 pl-10 pr-10">
         <div className="flex flex-1 justify-start items-center gap-2">
-          {/* <button
-            onClick={() => {
-              const sidebar = document.querySelector(".sidebar-panel");
-              if (sidebar) {
-                const isOpen = sidebar.classList.contains("translate-x-0");
-                sidebar.classList.toggle("translate-x-0", !isOpen);
-                sidebar.classList.toggle("-translate-x-full", isOpen);
-              }
-            }}
-            className="p-2 bg-gray-300 rounded-l focus:outline-none"
-          >
-            <Image
-              src="/sidebar-logo.png" 
-              alt="Sidebar Logo"
-              width={40}
-              height={40}
-              className="object-contain"
-            />
-          </button> */}
           <ToggleButton/>
           <Image
             src="/airtable-logo.webp" 
@@ -62,19 +44,12 @@ export default async function Dashboard() {
         </div>
       </header>
       <Sidebar/>
-      <main className="flex min-h-screen flex-col bg-neutral-150 text-black p-6">
-          <h1 className="text-4xl font-bold mb-6 pt-20 pl-50">Home</h1>
-          {/* Bases Section */}
+      <main className="flex min-h-screen flex-col bg-neutral-50 text-black p-6 pl-50 pt-20">
+          <h1 className="text-4xl font-bold mb-6">Home</h1>
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">Your Bases</h2>
-            {/* Placeholder for existing bases - replace with tRPC query later */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white p-4 rounded shadow">Base 1</div>
-              <div className="bg-white p-4 rounded shadow">Base 2</div>
-              <div className="bg-white p-4 rounded shadow">Base 3</div>
-            </div>
-            {/* Base Creation */}
-            <Base />
+            <BaseList userId={session.user.id}/>
+            <CreateBase/>
           </section>
       </main>
     </div>
