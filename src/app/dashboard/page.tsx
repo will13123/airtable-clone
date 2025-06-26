@@ -40,7 +40,7 @@ export default async function Dashboard() {
           </button>
         </div>
         <div className="flex-row justify-items-end flex-1">
-          <Dropdown profileImage={profileImage} user={session.user}/>
+          <Dropdown profileImage={profileImage} name={session.user?.name} email={session.user?.email}/>
         </div>
       </header>
       <Sidebar/>
