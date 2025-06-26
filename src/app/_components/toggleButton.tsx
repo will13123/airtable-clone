@@ -29,7 +29,7 @@ export default function ToggleButton() {
   return (
     <button className="p-2 bg-gray-300 rounded-l focus:outline-none toggle-button">
       <Image
-        src="/sidebar-logo.png" // Replace with your sidebar toggle image
+        src="/sidebar-logo.png" 
         alt="Toggle Sidebar"
         width={40}
         height={40}

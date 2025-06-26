@@ -10,21 +10,6 @@ type DropdownProps = {
 
 export default function Dropdown({profileImage, user}: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-
-  const handleClickOutside = (event: MouseEvent) => {
-    const dropdown = document.querySelector(".dropdown-menu");
-    if (dropdown && !dropdown.contains(event.target as Node)) {
-      setIsOpen(false);
-    }
-  };
-
-  // useEffect(() => {
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => {
-  //     document.removeEventListener("mousedown", handleClickOutside);
-  //   };
-  // }, []);
-
   return (
     <div className="relative">
       <button
