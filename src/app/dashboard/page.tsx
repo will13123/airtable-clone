@@ -15,10 +15,9 @@ export default async function Dashboard() {
     throw new Error("Unauthorized");
   }
 
-  const username = session.user?.name || session.user?.email?.split("@")[0] || "User";
-  const profileImage = session.user?.image || "https://via.placeholder.com/40";
-  const name = session.user?.name ?? "";
-  const email = session.user?.email ?? ""; 
+  const name = session.user?.name ?? "User";
+  const profileImage = session.user?.image ?? "https://via.placeholder.com/40";
+  const email = session.user?.email ?? "No Email"; 
 
   
 
