@@ -11,7 +11,16 @@ import { api } from "~/trpc/react";
 import React from "react";
 import type { Cell } from "@prisma/client";
 
-const columnHelper = createColumnHelper<String>();
+type RowType = { 
+  id: string, 
+  cells: { 
+    columnId: string, value: string, 
+  }[]; 
+  rowNum: Number
+}
+
+
+const columnHelper = createColumnHelper<RowType>();
 
 
 export default function CurrentTable({ tableId }: { tableId: string }) {
@@ -27,7 +36,13 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     onSuccess: () => utils.table.getRows.invalidate({ tableId }),
   });
 
-  const rows = data?.rows ?? [];
+  const rows: RowType[] = data?.rows.map((row, index) => ({
+    ...row,
+    rowNum: index + 1,
+  })) ?? [];
+
+  // const rows: RowType[] = data?.rows ?? [];
+
   const columns = data?.columns ?? [];
   
   const tableColumns = [
@@ -38,7 +53,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     }),
     ...columns.map((column) =>
       columnHelper.accessor((row) => {
-        const cell: Cell = row.cells.find((cell: Cell) => cell.columnId === column.id);
+        const cell: { columnId: string, value: string } | undefined = row.cells.find((cell) => cell.columnId === column.id);
         return cell?.value ?? "";
       }, {
         id: column.id,
@@ -99,7 +114,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map(row => (
+          {table.getRowModel().rows.map((row, index) => (
             <tr key={row.id} className="bg-white border dark:bg-gray-800 dark:border-gray-700 border-gray-200">
               {row.getVisibleCells().map(cell => (
                 <td key={cell.id} className="p-2 border-r">
