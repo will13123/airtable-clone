@@ -3,14 +3,8 @@
 
 import * as React from 'react'
 
-import {
-  createColumnHelper,
-} from '@tanstack/react-table'
-
 import { api } from "~/trpc/react";
 import CurrentTable from './currentTable';
-
-const columnHelper = createColumnHelper<any>()
 
 export default function TableList({ baseId }: { baseId: string }) {
   const utils = api.useUtils();
