@@ -22,13 +22,13 @@ export default function TableList({ baseId }: { baseId: string }) {
 
   // Check to see if there is a current table being viewed, else set it as the earliest made one by default
   React.useEffect(() => {
-    if (tables && earliestTable && currentTableIdState === "") {
+    if (tables && earliestTable && currTableId === "") {
       setCurrTable.mutate({ baseId, tableId: earliestTable.id });
       setCurrentTableIdState(earliestTable.id);
     } else {
       setCurrentTableIdState(currentTableIdState);
     }
-  }, [isLoading, tables, currTableId, baseId]);
+  }, [tables, currTableId, currentTableIdState]);
 
   
   if (isLoading) return <div className="text-center">Loading...</div>;
