@@ -16,9 +16,6 @@ export default function TableList({ baseId }: { baseId: string }) {
     onSuccess: () => {
       utils.base.getCurrTable.invalidate({ baseId });
     },
-    onError: (error) => {
-      console.error( error);
-    },
   });
 
   const [currentTableIdState, setCurrentTableIdState] = React.useState<string>(currTableId ?? "");
@@ -26,7 +23,7 @@ export default function TableList({ baseId }: { baseId: string }) {
   // Check to see if there is a current table being viewed, else set it as the earliest made one by default
   React.useEffect(() => {
     if (tables && earliestTable && currTableId === "") {
-      setCurrTable.mutate({ baseId, tableId: earliestTable.id });
+      void setCurrTable.mutate({ baseId, tableId: earliestTable.id });
       setCurrentTableIdState(earliestTable.id);
     } else {
       setCurrentTableIdState(currentTableIdState);
@@ -47,7 +44,7 @@ export default function TableList({ baseId }: { baseId: string }) {
             {tables.map((table) => {
               return (
                 <button key={table.id} className="bg-white p-2 rounded shadow mr-2 mb-2 hover:bg-gray-100" onClick={() => {
-                  setCurrTable.mutate({ baseId, tableId: table.id });
+                  void setCurrTable.mutate({ baseId, tableId: table.id });
                   setCurrentTableIdState(table.id);
                 }}>
                   {table.name}
