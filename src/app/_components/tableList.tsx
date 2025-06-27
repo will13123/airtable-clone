@@ -14,7 +14,7 @@ export default function TableList({ baseId }: { baseId: string }) {
 
   const setCurrTable = api.base.setCurrTable.useMutation({
     onSuccess: () => {
-      utils.base.getCurrTable.invalidate({ baseId });
+      void utils.base.getCurrTable.invalidate({ baseId });
     },
   });
 
