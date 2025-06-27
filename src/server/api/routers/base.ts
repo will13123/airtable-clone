@@ -57,10 +57,11 @@ export const baseRouter = createTRPCRouter({
       const table = await db.table.findUnique({
         where: { id: input.tableId, baseId: input.baseId },
       });
-      if (!table) return;
+      if (!table) throw new Error("Table not found");
       await db.base.update({
         where: { id: input.baseId },
         data: { currTable: input.tableId },
       });
+      return { success: true };
     }),
 });

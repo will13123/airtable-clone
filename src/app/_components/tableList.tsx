@@ -16,6 +16,9 @@ export default function TableList({ baseId }: { baseId: string }) {
     onSuccess: () => {
       utils.base.getCurrTable.invalidate({ baseId });
     },
+    onError: (error) => {
+      console.error( error);
+    },
   });
 
   const [currentTableIdState, setCurrentTableIdState] = React.useState<string>(currTableId ?? "");
