@@ -16,7 +16,6 @@ type RowType = {
   cells: { 
     columnId: string, value: string, 
   }[]; 
-  rowNum: Number
 }
 
 
@@ -36,17 +35,17 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     onSuccess: () => utils.table.getRows.invalidate({ tableId }),
   });
 
-  const rows: RowType[] = data?.rows.map((row, index) => ({
-    ...row,
-    rowNum: index + 1,
-  })) ?? [];
-
-  // const rows: RowType[] = data?.rows ?? [];
+  // const rows: RowType[] = data?.rows.map((row, index) => ({
+  //   ...row,
+  //   rowNum: index + 1,
+  // })) ?? [];
+ 
+  const rows = data?.rows ?? [];
 
   const columns = data?.columns ?? [];
   
   const tableColumns = [
-    columnHelper.accessor("rowNum", {
+    columnHelper.accessor("id", {
       header: "Row #",
       cell: (info) => info.row.index + 1,
       enableSorting: false,
