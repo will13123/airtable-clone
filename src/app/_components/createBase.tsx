@@ -27,14 +27,14 @@ export default function CreateBase() {
           placeholder="Base Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-full bg-white px-4 py-2 text-black"
+          className="w-full rounded-full bg-white px-4 py-2 text-black shadow"
         />
         <button
           type="submit"
           className="rounded-full bg-blue-500 text-white px-10 py-2 font-semibold transition hover:bg-blue-400 shadow"
           disabled={createBase.isPending}
         >
-          {createBase.isPending ? "Creating..." : "Create Base"}
+          {createBase.isPending ? "Creating..." : "Create"}
         </button>
       </form>
     </div>

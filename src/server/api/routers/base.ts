@@ -22,4 +22,45 @@ export const baseRouter = createTRPCRouter({
         where: { userId: input.userId },
       });
     }),  
+  
+  getTables: protectedProcedure
+    .input(z.object({ baseId: z.string() }))
+    .query(async ({ input }) => {
+      return await db.table.findMany({
+        where: { baseId: input.baseId },
+      });
+    }),
+
+  earliestTable: protectedProcedure
+    .input(z.object({ baseId: z.string() }))
+    .query(async ({ input }) => {
+      const earliestTable = await db.table.findFirst({
+        where: { baseId: input.baseId },
+        orderBy: { createdAt: "asc" }, 
+      });
+      return earliestTable;
+    }),
+  
+  getCurrTable: protectedProcedure
+    .input(z.object({ baseId: z.string() }))
+    .query(async ({ input }) => {
+      const base = await db.base.findUnique({
+        where: { id: input.baseId }
+      })
+      if (!base) return null;
+      return base.currTable
+    }),
+
+  setCurrTable: protectedProcedure
+    .input(z.object({ baseId: z.string(), tableId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const table = await db.table.findUnique({
+        where: { id: input.tableId, baseId: input.baseId },
+      });
+      if (!table) return;
+      await db.base.update({
+        where: { id: input.baseId },
+        data: { currTable: input.tableId },
+      });
+    }),
 });

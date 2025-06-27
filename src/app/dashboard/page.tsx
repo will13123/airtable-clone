@@ -50,6 +50,7 @@ export default async function Dashboard() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">Your Bases</h2>
             <BaseList userId={session.user.id}/>
+            <h2 className="text-2xl font-semibold mb-4">Create Base</h2>
             <CreateBase/>
           </section>
       </main>

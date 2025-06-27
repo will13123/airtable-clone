@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { api } from "~/trpc/react";
 
 export default function BaseList({ userId }: { userId: string }) {
@@ -14,11 +15,16 @@ export default function BaseList({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-4">
       {bases.map((base) => (
-        <div key={base.id} className="bg-white p-4 rounded shadow">
-          {base.name}
-        </div>
+        <Link
+          key={base.id}
+          href={`/base?id=${base.id}`}
+        >
+          <div key={base.id} className="bg-white p-10 rounded shadow hover:shadow-xl content-center">
+            {base.name}
+          </div>
+        </Link>
       ))}
     </div>
   );
