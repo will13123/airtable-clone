@@ -70,6 +70,7 @@ model Table {
   baseId        String
   name          String
   columns       Column[]
+  rows          Row[]
   cells         Cell[]
   views         View[]
   createdAt     DateTime  @default(now())
@@ -79,10 +80,20 @@ model Table {
   @@index([baseId])
 }
 
+model Row {
+  id            String    @id @default(cuid())
+  tableId       String
+  cells         Cell[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  table         Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([tableId])
+}
+
 model Column {
   id            String    @id @default(cuid())
   tableId       String
-  name          String
   type          String    @default("text") // "text" or "number"
   order         Int       @default(0)
   cells         Cell[]
@@ -97,13 +108,14 @@ model Column {
 model Cell {
   id            String    @id @default(cuid())
   tableId       String
-  columnId      String
+  columnId      String    // Custom col identifier
   rowId         String    // Custom row identifier
   value         String?   // Store as text, cast to number if type is "number"
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   table         Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
   column        Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  row           Row       @relation(fields: [rowId], references: [id], onDelete: Cascade)
 
   @@index([tableId])
   @@index([columnId])
