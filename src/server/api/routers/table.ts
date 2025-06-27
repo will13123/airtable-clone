@@ -22,14 +22,15 @@ export const tableRouter = createTRPCRouter({
         where: { id: input.tableId },
         include:{ rows: { include: { cells: true } }, columns: true },
       });
-      const rows = table?.rows.map((row) => {
-        id: row.id
+      if (!table) return null
+      const rows = table.rows.map((row) => ({
+        id: row.id,
         cells: table.columns.map((column) => {
-          const cell = row.cells.find((cell) => cell.columnId == column.id);
-          return { columnId: column.id, value: cell?.value ?? ""};
-        })
-      })
-      return rows;
+          const cell = row.cells.find((c) => c.columnId === column.id);
+          return { columnId: column.id, value: cell?.value ?? "" };
+        }),
+      }));
+      return { rows, columns: table.columns };
     }),
 
   getNameFromId: protectedProcedure
