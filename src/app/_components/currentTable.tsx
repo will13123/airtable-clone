@@ -11,7 +11,7 @@ import { api } from "~/trpc/react";
 import React from "react";
 import type { Cell } from "@prisma/client";
 
-const columnHelper = createColumnHelper<any>();
+const columnHelper = createColumnHelper<String>();
 
 
 export default function CurrentTable({ tableId }: { tableId: string }) {
@@ -38,7 +38,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     }),
     ...columns.map((column) =>
       columnHelper.accessor((row) => {
-        const cell = row.cells.find((cell: Cell) => cell.columnId === column.id);
+        const cell: Cell = row.cells.find((cell: Cell) => cell.columnId === column.id);
         return cell?.value ?? "";
       }, {
         id: column.id,
