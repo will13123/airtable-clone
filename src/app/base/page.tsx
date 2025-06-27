@@ -3,7 +3,7 @@ import { auth } from "~/server/auth";
 import CreateTable from "../_components/createTable";
 import TableList from "../_components/tableList";
 
-export default async function BasePage({ searchParams }: {searchParams: {id?: string}}) {
+export default async function BasePage({ searchParams }: {searchParams: Promise<{ id?: string }>}) {
   const session = await auth();
 
   if (!session?.user) {
