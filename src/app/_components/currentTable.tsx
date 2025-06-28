@@ -10,7 +10,7 @@ import {
   type Cell as tanstackCell
 } from "@tanstack/react-table";
 import { api } from "~/trpc/react";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { Cell } from "@prisma/client";
 import { useVirtualizer, Virtualizer } from "@tanstack/react-virtual";
 import { createSolutionBuilder, InferencePriority } from "typescript";
@@ -74,24 +74,25 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             const initialValue = info.getValue();
             const row = info.row.original;
             const cell = row.cells.find((c) => c.columnId === column.id);
-            const [value, setValue] = React.useState(initialValue);
+            const [value, setValue] = useState(initialValue);
 
             const onBlur = () => {
-              if (cell && cell.value !== value) {
+              if (cell && cell.value !== value && cell.cellId) {
                 updateCell.mutate({
-                  cellId: cell?.cellId as string,
+                  cellId: cell?.cellId,
                   value: value
                 });
               }
             }
             
-            React.useEffect(() => {
+            useEffect(() => {
               setValue(initialValue)
             }, [initialValue])
 
             return (
               <input
-                value={value as string}
+                className="w-full h-full p-2 border-0 rounded-none"
+                value={value}
                 onChange={e => {
                   setValue(e.target.value)}
                 }
@@ -134,10 +135,10 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         className="container h-[70dvh] w-[80dvw] overflow-auto bg-gray-100" 
       >
         <table 
-          className="h-full w-full text-left rtl:text-right text-gray-500 dark:text-gray-400 relative bg-white"
+          className="h-full w-full text-left rtl:text-right text-gray-500  relative bg-white"
           style={{ height: virtualizer.getTotalSize() + "px" }}
         >
-          <thead className="text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <thead className="text-gray-700 uppercase bg-gray-50">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id} className="border-b">
                 {headerGroup.headers.map((header) => {
@@ -168,7 +169,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
               return (
                 <tr
                     key={row.id}
-                    className="bg-white border dark:bg-gray-800 dark:border-gray-700 border-gray-200"
+                    className="bg-white border border-gray-200"
                     style={{
                       height: `${virtualRow.size}px`,
                       // transform: `translateY(${virtualRow.start}px)`,
@@ -177,7 +178,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className="p-2 border-r h-[45px] w-[100px]"
+                        className="border-r h-[45px] w-[100px]"
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
