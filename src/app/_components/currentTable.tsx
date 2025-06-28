@@ -92,10 +92,10 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
       )}
       <div 
         ref={scrollRef} 
-        className="container h-[70dvh] w-[80dvw] overflow-auto" 
+        className="container h-[70dvh] w-[80dvw] overflow-auto bg-gray-100" 
       >
         <table 
-          className="h-full w-full text-left rtl:text-right text-gray-500 dark:text-gray-400 relative"
+          className="h-full w-full text-left rtl:text-right text-gray-500 dark:text-gray-400 relative bg-white"
           style={{ height: virtualizer.getTotalSize() + "px" }}
         >
           <thead className="text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
