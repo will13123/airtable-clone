@@ -55,6 +55,43 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
  
   const virtualRows = virtualizer.getVirtualItems();
   
+  // Default values -> can edit each one
+  const defaultColumn: Partial<ColumnDef<RowType>> = {
+    cell: (info) => {
+      // Add ability to edit cell
+      const initialValue = info.getValue() as string;
+      const row = info.row.original;
+      const column = info.column.columnDef;
+      const cell = row.cells.find((c) => c.columnId === column.id);
+      const [value, setValue] = useState(initialValue);
+
+      const onBlur = () => {
+        if (cell && cell.value !== value && cell.cellId) {
+          updateCell.mutate({
+            cellId: cell?.cellId,
+            value: value
+          });
+        }
+      }
+      
+      useEffect(() => {
+        setValue(initialValue)
+      }, [initialValue])
+
+      return (
+        <input
+          className="w-full h-full p-2 border-0 rounded-none"
+          value={value}
+          onChange={e => {
+            setValue(e.target.value)}
+          }
+          onBlur={onBlur}
+        />
+      )
+    }
+  };
+
+
   const tableColumns = React.useMemo(
     () =>[
       columnHelper.accessor("id", {
@@ -69,37 +106,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         }, {
           id: column.id,
           header: column.id,
-          cell: (info) => {
-            // Add ability to edit cell
-            const initialValue = info.getValue();
-            const row = info.row.original;
-            const cell = row.cells.find((c) => c.columnId === column.id);
-            const [value, setValue] = useState(initialValue);
-
-            const onBlur = () => {
-              if (cell && cell.value !== value && cell.cellId) {
-                updateCell.mutate({
-                  cellId: cell?.cellId,
-                  value: value
-                });
-              }
-            }
-            
-            useEffect(() => {
-              setValue(initialValue)
-            }, [initialValue])
-
-            return (
-              <input
-                className="w-full h-full p-2 border-0 rounded-none"
-                value={value}
-                onChange={e => {
-                  setValue(e.target.value)}
-                }
-                onBlur={onBlur}
-              />
-            )
-          }
         })
       ),
     ],
@@ -117,6 +123,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const table = useReactTable({
     data: rows,
     columns: tableColumns,
+    defaultColumn,
     getCoreRowModel: getCoreRowModel(),
   })
 
