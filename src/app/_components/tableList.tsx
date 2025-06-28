@@ -28,7 +28,7 @@ export default function TableList({ baseId }: { baseId: string }) {
     } else {
       setCurrentTableIdState(currentTableIdState);
     }
-  }, [tables, currTableId, currentTableIdState]);
+  }, [tables, currTableId, currentTableIdState, earliestTable, setCurrTable, baseId]);
 
   
   if (isLoading) return <div className="text-center">Loading...</div>;

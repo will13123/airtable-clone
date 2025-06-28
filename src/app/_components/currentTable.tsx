@@ -7,13 +7,10 @@ import {
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
-  type Cell as tanstackCell
 } from "@tanstack/react-table";
 import { api } from "~/trpc/react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import type { Cell } from "@prisma/client";
-import { useVirtualizer, Virtualizer } from "@tanstack/react-virtual";
-import { createSolutionBuilder, InferencePriority } from "typescript";
+import React, {useEffect, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 type RowType = { 
   id: string, 
@@ -54,7 +51,62 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   })
  
   const virtualRows = virtualizer.getVirtualItems();
-  
+
+  // Custom hook to avoid hooks in functions, contains all the states
+  const useEditableCell = ({
+    initialValue,
+    cell,
+    updateCell,
+  }: {
+    initialValue: string;
+    cell: { cellId: string | undefined; value: string; columnId: string } | undefined;
+    updateCell: { mutate: (data: { cellId: string; value: string }) => void };
+  }) => {
+    const [value, setValue] = useState(initialValue);
+
+    useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    const onBlur = () => {
+      if (cell && cell.value !== value && cell.cellId) {
+        updateCell.mutate({
+          cellId: cell.cellId,
+          value,
+        });
+      }
+    };
+
+    return { value, setValue, onBlur };
+  };
+
+// Component to render the editable cell, to avoid hooks in functions, returns the div
+const EditableCell = ({
+  initialValue,
+  cell,
+  updateCell,
+}: {
+  initialValue: string;
+  cell: { cellId: string | undefined; value: string; columnId: string } | undefined;
+  updateCell: { mutate: (data: { cellId: string; value: string }) => void };
+}) => {
+  const { value, setValue, onBlur } = useEditableCell({
+    initialValue,
+    cell,
+    updateCell,
+  });
+
+  return (
+    <input
+      className="w-full h-full p-2 border-0 rounded-none"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={onBlur}
+    />
+  );
+};
+
+
   // Default values -> can edit each one
   const defaultColumn: Partial<ColumnDef<RowType>> = {
     cell: (info) => {
@@ -63,29 +115,34 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
       const row = info.row.original;
       const column = info.column.columnDef;
       const cell = row.cells.find((c) => c.columnId === column.id);
-      const [value, setValue] = useState(initialValue);
+      // const [value, setValue] = useState(initialValue);
 
-      const onBlur = () => {
-        if (cell && cell.value !== value && cell.cellId) {
-          updateCell.mutate({
-            cellId: cell?.cellId,
-            value: value
-          });
-        }
-      }
+      // const onBlur = () => {
+      //   if (cell && cell.value !== value && cell.cellId) {
+      //     updateCell.mutate({
+      //       cellId: cell?.cellId,
+      //       value: value
+      //     });
+      //   }
+      // }
       
-      useEffect(() => {
-        setValue(initialValue)
-      }, [initialValue])
-
+      // useEffect(() => {
+      //   setValue(initialValue)
+      // }, [initialValue])
       return (
-        <input
-          className="w-full h-full p-2 border-0 rounded-none"
-          value={value}
-          onChange={e => {
-            setValue(e.target.value)}
-          }
-          onBlur={onBlur}
+        // <input
+        //   className="w-full h-full p-2 border-0 rounded-none"
+        //   value={value}
+        //   onChange={e => {
+        //     setValue(e.target.value)}
+        //   }
+        //   onBlur={onBlur}
+        // />
+        
+        <EditableCell
+          initialValue={initialValue}
+          cell={cell}
+          updateCell={updateCell} 
         />
       )
     }

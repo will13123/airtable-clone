@@ -44,11 +44,7 @@ export const tableRouter = createTRPCRouter({
 
   updateCell: protectedProcedure
     .input(z.object({ cellId: z.string(), value: z.string() }))
-    .mutation(async ({ input }) => {
-      const cell = await db.cell.findUnique({
-        where: { id: input.cellId },
-      })
-      
+    .mutation(async ({ input }) => {      
       await db.cell.update({
         where: { id: input.cellId },
         data: { value: input.value },
