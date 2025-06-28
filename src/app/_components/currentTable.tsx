@@ -6,16 +6,19 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type ColumnDef,
+  type Cell as tanstackCell
 } from "@tanstack/react-table";
 import { api } from "~/trpc/react";
-import React, { useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import type { Cell } from "@prisma/client";
 import { useVirtualizer, Virtualizer } from "@tanstack/react-virtual";
+import { createSolutionBuilder, InferencePriority } from "typescript";
 
 type RowType = { 
   id: string, 
   cells: { 
-    columnId: string, value: string, 
+    columnId: string, value: string, cellId: string | undefined
   }[]; 
 }
 
@@ -33,8 +36,12 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const createColumn = api.column.create.useMutation({
     onSuccess: () => utils.table.getRows.invalidate({ tableId }),
   });
+  const updateCell = api.table.updateCell.useMutation({
+    // onSuccess: () => utils.table.getRows.invalidate({ tableId }),
+  })
   const rows = data?.rows ?? [];
   const columns = data?.columns ?? [];
+
 
   // Tanstack Virtualisation
   const scrollRef = React.useRef<HTMLTableSectionElement>(null)
@@ -48,23 +55,55 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
  
   const virtualRows = virtualizer.getVirtualItems();
   
-  const tableColumns = [
-    columnHelper.accessor("id", {
-      header: "Row #",
-      cell: (info) => info.row.index + 1,
-      enableSorting: false,
-    }),
-    ...columns.map((column) =>
-      columnHelper.accessor((row) => {
-        const cell: { columnId: string, value: string } | undefined = row.cells.find((cell) => cell.columnId === column.id);
-        return cell?.value ?? "";
-      }, {
-        id: column.id,
-        header: column.id,
-        cell: (info) => info.getValue(),
-      })
-    ),
-  ];
+  const tableColumns = React.useMemo(
+    () =>[
+      columnHelper.accessor("id", {
+        header: "Row #",
+        cell: (info) => info.row.index + 1,
+        enableSorting: false,
+      }),
+      ...columns.map((column) =>
+        columnHelper.accessor((row) => {
+          const cell: { cellId: string | undefined, columnId: string, value: string } | undefined = row.cells.find((cell) => cell.columnId === column.id);
+          return cell?.value ?? "";
+        }, {
+          id: column.id,
+          header: column.id,
+          cell: (info) => {
+            // Add ability to edit cell
+            const initialValue = info.getValue();
+            const row = info.row.original;
+            const cell = row.cells.find((c) => c.columnId === column.id);
+            const [value, setValue] = React.useState(initialValue);
+
+            const onBlur = () => {
+              if (cell && cell.value !== value) {
+                updateCell.mutate({
+                  cellId: cell?.cellId as string,
+                  value: value
+                });
+              }
+            }
+            
+            React.useEffect(() => {
+              setValue(initialValue)
+            }, [initialValue])
+
+            return (
+              <input
+                value={value as string}
+                onChange={e => {
+                  setValue(e.target.value)}
+                }
+                onBlur={onBlur}
+              />
+            )
+          }
+        })
+      ),
+    ],
+    [columns]
+  );
 
   const handleCreateRow = () => {
     createRow.mutate({ tableId });

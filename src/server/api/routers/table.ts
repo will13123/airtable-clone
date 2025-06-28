@@ -5,7 +5,7 @@ import { db } from "~/server/db";
 export const tableRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ baseId: z.string(), name: z.string()}))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const table = await db.table.create({
         data: {
           name: input.name,
@@ -27,7 +27,7 @@ export const tableRouter = createTRPCRouter({
         id: row.id,
         cells: table.columns.map((column) => {
           const cell = row.cells.find((c) => c.columnId === column.id);
-          return { columnId: column.id, value: cell?.value ?? "" };
+          return { columnId: column.id, value: cell?.value ?? "", cellId: cell?.id };
         }),
       }));
       return { rows, columns: table.columns };
@@ -40,6 +40,19 @@ export const tableRouter = createTRPCRouter({
         where: {id: input.tableId }
       })
       return table?.name;
-    })
+    }),
+
+  updateCell: protectedProcedure
+    .input(z.object({ cellId: z.string(), value: z.string() }))
+    .mutation(async ({ input }) => {
+      const cell = await db.cell.findUnique({
+        where: { id: input.cellId },
+      })
+      
+      await db.cell.update({
+        where: { id: input.cellId },
+        data: { value: input.value },
+      })
+    }),
 });
 
