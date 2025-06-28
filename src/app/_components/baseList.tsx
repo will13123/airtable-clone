@@ -19,7 +19,7 @@ export default function BaseList({ userId }: { userId: string }) {
       {bases.map((base) => (
         <Link
           key={base.id}
-          href={`/base?id=${base.id}`}
+          href={`/base?id=${base.id}&name=${base.name}`}
         >
           <div key={base.id} className="bg-white p-10 rounded shadow hover:shadow-xl content-center">
             {base.name}
