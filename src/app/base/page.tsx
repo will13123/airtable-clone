@@ -29,7 +29,7 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
         {/* Main Section */}
         <div className="flex-1"> 
           {/* Top bar */}
-          <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-2 pl-4 pr-4">
+          <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-4">
             <div className="flex flex-1 justify-start items-center gap-2">
               <Image
                 src="/airtable-logo.webp" 
@@ -41,7 +41,6 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
               <p className="text-2xl font-bold">Name: {name}</p>
             </div>
             <div className="flex flex-row justify-between items-center flex-1">
-              {/* <p className="text-neutral-600 text-xl">Data Automations Interfaces Forms</p> */}
               <p className="text-neutral-600 text-xl">Data</p>
               <p className="text-neutral-600 text-xl"> Automations</p>
               <p className="text-neutral-600 text-xl">Interfaces</p>
@@ -55,9 +54,8 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
                 </Link>
             </div>
           </header>
-          <div className="p-4">
+          <div className="">
             <TableList baseId={id}/>
-            <CreateTable baseId={id}/>
           </div>
           
         </div>  

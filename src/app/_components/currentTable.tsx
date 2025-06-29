@@ -155,14 +155,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   if (!name) return 
   return (
     <div className="p-4">
-      {(name) && (
-        <div>
-          {name} : {tableId}
-        </div>
-      )}
       <div 
         ref={scrollRef} 
-        className="container h-[70dvh] w-[80dvw] overflow-auto bg-gray-100" 
+        className="container h-[70dvh] w-[100dvw] overflow-auto bg-gray-100" 
       >
         <table 
           className="h-full w-full text-left rtl:text-right text-gray-500  relative bg-white"
