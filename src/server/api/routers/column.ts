@@ -4,11 +4,12 @@ import { db } from "~/server/db";
 
 export const columnRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(z.object({ tableId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .input(z.object({ tableId: z.string(), type: z.string() }))
+    .mutation(async ({ input }) => {
       const col = await db.column.create({
         data: {
           tableId: input.tableId,
+          type: input.type,
         },
       });
 

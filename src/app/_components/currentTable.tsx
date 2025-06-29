@@ -11,18 +11,19 @@ import {
 import { api } from "~/trpc/react";
 import React, {useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { text } from "stream/consumers";
+import { number } from "zod";
 
 type RowType = { 
   id: string, 
-  cells: { 
-    columnId: string, value: string, cellId: string | undefined
-  }[]; 
+  cells: CellType[]; 
 }
 
 type CellType = {
     cellId: string | undefined;
     value: string;
     columnId: string;
+    type: string;
   }
 
 
@@ -42,6 +43,11 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const updateCell = api.table.updateCell.useMutation({
     // onSuccess: () => utils.table.getRows.invalidate({ tableId }),
   })
+  const [columnDropdownIsOpen, setColumnDropdownIsOpen] = useState((false));
+  const handleColumnDropdown = () => {
+    setColumnDropdownIsOpen(!columnDropdownIsOpen);
+  };
+  const [type, setType] = useState("");
   const rows = data?.rows ?? [];
   const columns = data?.columns ?? [];
 
@@ -63,24 +69,31 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const EditableCell = ({
     initialValue,
     cell,
-    updateCell,
   }: {
     initialValue: string;
     cell: CellType | undefined;
-    updateCell: { mutate: (data: { cellId: string; value: string }) => void };
   }) => {
     const [value, setValue] = useState(initialValue);
-
+    const textRegex = /^[a-zA-Z]+$/;
+    const numberRegex = /^\d+$/;
+    
     useEffect(() => {
       setValue(initialValue);
     }, [initialValue]);
+    if (!cell) return;
+    const regex = cell.type === "text" ? textRegex : numberRegex;
 
     const onBlur = () => {
       if (cell && cell.value !== value && cell.cellId) {
-        updateCell.mutate({
-          cellId: cell.cellId,
-          value,
-        });
+        // Check for if the value matches the type
+        if (regex.test(value)) {
+          updateCell.mutate({
+            cellId: cell.cellId,
+            value,
+          });
+        } else {
+          alert(`Please input only ${cell.type === "text" ? "letters" : "numbers"}`);
+        }
       }
     };
 
@@ -108,7 +121,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         <EditableCell
           initialValue={initialValue}
           cell={cell}
-          updateCell={updateCell} 
         />
       )
     }
@@ -128,7 +140,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           return cell?.value ?? "";
         }, {
           id: column.id,
-          header: column.id,
+          header: column.type,
         })
       ),
     ],
@@ -139,9 +151,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     createRow.mutate({ tableId });
   }
 
-  const handleCreateCol = () => {
-    createColumn.mutate({ tableId });
-  }
+  // const handleCreateCol = () => {
+  //   createColumn.mutate({ tableId });
+  // }
 
   const table = useReactTable({
     data: rows,
@@ -151,7 +163,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   })
 
 
-  if (rowsLoading) return <div className="text-center">Loading...</div>
+  if (rowsLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>
   if (!name) return 
   return (
     <div className="p-4">
@@ -215,18 +227,74 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         </table>
       </div>
       <button
-        className="text-green-500 hover:text-green-700 cursor-pointer"
+        className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xl gap-2"
         onClick={handleCreateRow}
         
       >
         Create Row
       </button>
-      <button
+      {/* <button
         className="text-green-500 hover:text-green-700 cursor-pointer"
         onClick={handleCreateCol}
       >
         Create Column
-      </button>
+      </button> */}
+
+
+      {/* Create Column Dropdown */}
+      <div className="relative inline-block">
+        <button
+          onClick={handleColumnDropdown}
+          className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none border-l-2 border-gray-300 cursor-pointer text-xl gap-2"
+        >
+          Create Column
+        </button>
+        <div
+          className={`absolute right-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
+            columnDropdownIsOpen ? 'block' : 'hidden'
+          }`}
+        >
+          <ul className="py-1 text-sm text-gray-700">
+            <li>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setColumnDropdownIsOpen(!columnDropdownIsOpen);
+                  if (type === "text" || type === "number") {
+                    createColumn.mutate({ tableId, type });
+                  } else {
+                    alert("Enter a valid type");
+                  }
+                }}
+                className="flex flex-col gap-2"
+              >
+                <input
+                  type="text"
+                  placeholder="text or number"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
+                />
+                <button
+                  type="submit"
+                  className="rounded-md mb-4 bg-blue-400 text-white px-4 py-2 font-semibold transition hover:bg-blue-400 shadow cursor-pointer"
+                  disabled={createColumn.isPending}
+                >
+                  {createColumn.isPending ? "Creating..." : "Create"}
+                </button>
+              </form>
+            </li>
+            <li>
+              <button
+                onClick={handleColumnDropdown}
+                className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 border-1"
+              >
+                Close
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
       {rows.length === 0 && <p className="mt-2 text-center">No rows available</p>}
     </div>
   )

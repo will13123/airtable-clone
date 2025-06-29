@@ -27,7 +27,7 @@ export const tableRouter = createTRPCRouter({
         id: row.id,
         cells: table.columns.map((column) => {
           const cell = row.cells.find((c) => c.columnId === column.id);
-          return { columnId: column.id, value: cell?.value ?? "", cellId: cell?.id };
+          return { columnId: column.id, type: column.type, value: cell?.value ?? "", cellId: cell?.id };
         }),
       }));
       return { rows, columns: table.columns };
