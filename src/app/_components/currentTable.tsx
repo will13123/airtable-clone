@@ -11,8 +11,6 @@ import {
 import { api } from "~/trpc/react";
 import React, {useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { text } from "stream/consumers";
-import { number } from "zod";
 
 type RowType = { 
   id: string, 
@@ -123,7 +121,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           cell={cell}
         />
       )
-    }
+    },
+    size: 150, // Default size
   };
 
 
@@ -133,6 +132,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         header: "Row #",
         cell: (info) => info.row.index + 1,
         enableSorting: false,
+        size: 100,
       }),
       ...columns.map((column) =>
         columnHelper.accessor((row) => {
@@ -160,6 +160,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     columns: tableColumns,
     defaultColumn,
     getCoreRowModel: getCoreRowModel(),
+    enableColumnResizing: false,
   })
 
 
@@ -184,7 +185,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                       key={header.id}
                       colSpan={header.colSpan}
                       style={{ width: header.getSize() }} 
-                      className="p-2 text-left font-semibold border-r w-20px"
+                      className="p-2 text-left font-semibold border-r"
                     >
                       <div>
                         {flexRender(
@@ -215,7 +216,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className="border-r h-[45px] w-[100px]"
+                        className="border-r h-[45px]"
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
