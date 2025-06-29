@@ -29,13 +29,20 @@ export default function TableList({ baseId }: { baseId: string }) {
     } else {
       setCurrentTableIdState(currentTableIdState);
     }
-  }, [tables, currTableId, currentTableIdState, earliestTable, setCurrTable, baseId]);
+  }, [tables, currTableId, currentTableIdState, earliestTable]);
 
   
-  if (isLoading) return <div className="text-center">Loading...</div>;
+  if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
   if (!tables || tables.length === 0) {
-    return <div className="text-center">No tables found.</div>;
+    return (
+      <div className="justify-center justify-items-center">
+        <div className="text-center text-gray-600 text-xl">No tables found.</div>
+        <div className="justify-center justify-items-center">
+          <CreateTable baseId={baseId}/>
+        </div>
+      </div>
+  );
   }
   
   return (

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { auth } from "~/server/auth";
-import CreateTable from "../_components/createTable";
 import TableList from "../_components/tableList";
 import Image from "next/image";
 
@@ -12,10 +11,10 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
     throw new Error("Unauthorized");
   }
   const { id, name} = await searchParams;
-  if (!id) return <div>Error loading base</div>
+  if (!id) return <div className="text-gray-600 text-xl">Error loading base</div>
   return (
     <div className="flex h-screen">
-        <div className="w-20 text-white flex-shrink-0 flex-col justify-between border-neutral-500 border-r-2">
+        <div className="w-18 text-white flex-shrink-0 flex-col justify-between border-neutral-500 border-r-2">
           <div className="p-4">
             <Image
               src="/airtable-logo-black.svg" 
