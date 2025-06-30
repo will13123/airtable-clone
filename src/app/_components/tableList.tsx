@@ -19,11 +19,15 @@ export default function TableList({ baseId }: { baseId: string }) {
     },
   });
 
-  const [currentTableIdState, setCurrentTableIdState] = React.useState<string>(currTableId ?? "");
+  const [currentTableIdState, setCurrentTableIdState] = React.useState(currTableId ?? "");
 
   // Check to see if there is a current table being viewed, else set it as the earliest made one by default
   React.useEffect(() => {
-    if (tables && earliestTable && currTableId === "") {
+    // If they dont exist, refresh
+    if (!earliestTable) {
+      void utils.base.earliestTable.invalidate({ baseId });
+    }
+    if (tables && earliestTable && currentTableIdState === "") {
       void setCurrTable.mutate({ baseId, tableId: earliestTable.id });
       setCurrentTableIdState(earliestTable.id);
     } else {
@@ -68,9 +72,9 @@ export default function TableList({ baseId }: { baseId: string }) {
               ))}
               <CreateTable baseId={baseId}/>
             </div>
-            {(currTableId !== "" && currTableId) && (
+            {(currentTableIdState !== "" && currentTableIdState) && (
               <div className="border border-gray-300 border-t-0 bg-white h-full">
-                <CurrentTable tableId={currTableId} />
+                <CurrentTable tableId={currentTableIdState} />
               </div>
             )}
           </div>

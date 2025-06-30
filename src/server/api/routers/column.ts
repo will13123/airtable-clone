@@ -1,15 +1,17 @@
+import type { View } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 
 export const columnRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(z.object({ tableId: z.string(), type: z.string() }))
+    .input(z.object({ tableId: z.string(), type: z.string(), name: z.string() }))
     .mutation(async ({ input }) => {
       const col = await db.column.create({
         data: {
           tableId: input.tableId,
           type: input.type,
+          name: input.name,
         },
       });
 
@@ -27,7 +29,16 @@ export const columnRouter = createTRPCRouter({
       await db.cell.createMany({
         data: cells,
       });
-      
       return col;
+    }),
+  
+  getType: protectedProcedure
+    .input(z.object({ columnId: z.string() }))
+    .query(async ({ input }) => {
+      if (input.columnId === "id") return "";
+      const column = await db.column.findUnique({
+        where: { id: input.columnId },
+      });
+      return column?.type;
     })
 });

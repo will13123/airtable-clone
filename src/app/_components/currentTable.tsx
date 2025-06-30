@@ -75,6 +75,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           </div>            
         </div>
         {/* Main Table */}
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
         {currViewId && <CurrentView viewId={currViewId} tableId={tableId}/>}
         
       </div>

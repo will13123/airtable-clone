@@ -12,6 +12,7 @@ import { api } from "~/trpc/react";
 import React, {useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import CreateView from "./createView";
+import EditColumn from "./editColumn";
 
 type RowType = { 
   id: string, 
@@ -30,10 +31,9 @@ const columnHelper = createColumnHelper<RowType>();
 
 export default function CurrentTable({ viewId, tableId }: { viewId: string, tableId: string }) {
   const utils = api.useUtils();
-  const { data: name } = api.table.getNameFromId.useQuery({ tableId: tableId });
   const { data, isLoading: rowsLoading } = api.table.getRows.useQuery({ tableId });
-  const { data: views } = api.table.getViews.useQuery({ tableId });
-
+  const { data: filters } = api.view.getFilters.useQuery({ viewId });
+  const { data: sorts } = api.view.getSorts.useQuery({ viewId });
   const createRow = api.row.create.useMutation({
     onSuccess: () => utils.table.getRows.invalidate({ tableId }),
   });
@@ -48,8 +48,11 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
     setColumnDropdownIsOpen(!columnDropdownIsOpen);
   };
   const [type, setType] = useState("");
+  const [columnName, setColumnName] = useState("");
   const rows = data?.rows ?? [];
   const columns = data?.columns ?? [];
+
+  // Add in logic to implement filters, sorts, hide
 
   // Tanstack Virtualisation
   const scrollRef = React.useRef<HTMLTableSectionElement>(null)
@@ -87,7 +90,7 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
         className="w-full h-full p-2 border-0 rounded-none"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onBlur={(e) => {
+        onBlur={() => {
           if (cell && cell.value !== value && cell.cellId) {
             // Check for if the value matches the type
             if (regex.test(value)) {
@@ -145,7 +148,7 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
           return cell?.value ?? "";
         }, {
           id: column.id,
-          header: column.type,
+          header: `${column.name}: ${column.type}`,
         })
       ),
     ],
@@ -169,7 +172,6 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
   })
 
   if (rowsLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>
-  if (!name) return 
 
   return (
       <div className="flex flex-col h-full">
@@ -192,14 +194,15 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
                             key={header.id}
                             colSpan={header.colSpan}
                             style={{ width: header.getSize() }} 
-                            className="p-2 text-left font-semibold border-r"
+                            className="p-2 text-left font-semibold border-r min-w-[150px]"
                           >
-                            <div>
+                            <div className="inline-block">
                               {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
                             </div>
+                            <EditColumn columnId={header.column.id}/>
                           </th>
                         )
                         
@@ -265,17 +268,26 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
                           e.preventDefault();
                           setColumnDropdownIsOpen(!columnDropdownIsOpen);
                           if (type === "text" || type === "number") {
-                            createColumn.mutate({ tableId, type });
+                            createColumn.mutate({ tableId, type, name: columnName });
                           } else {
                             alert("Enter a valid type");
                           }
                           setType("");
+                          setColumnName("");
                         }}
                         className="flex flex-col gap-2"
                       >
                         <input
                           type="text"
-                          placeholder="text or number"
+                          placeholder="Column Name"
+                          value={columnName}
+                          onChange={(e) => setColumnName(e.target.value)}
+                          className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
+                        />
+
+                        <input
+                          type="text"
+                          placeholder="Enter 'text' or 'number'"
                           value={type}
                           onChange={(e) => setType(e.target.value)}
                           className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"

@@ -96,6 +96,7 @@ model Row {
 model Column {
   id            String    @id @default(cuid())
   tableId       String
+  name          String    
   type          String    @default("text") // "text" or "number"
   order         Int       @default(0)
   cells         Cell[]
