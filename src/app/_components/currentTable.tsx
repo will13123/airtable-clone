@@ -11,7 +11,6 @@ import {
 import { api } from "~/trpc/react";
 import React, {useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import Image from "next/image";
 import CreateView from "./createView";
 
 type RowType = { 
@@ -35,7 +34,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const { data: name } = api.table.getNameFromId.useQuery({ tableId: tableId });
   const { data, isLoading: rowsLoading } = api.table.getRows.useQuery({ tableId });
   const { data: views } = api.table.getViews.useQuery({ tableId });
-  const { data: currViewId}= api.table.getCurrView.useQuery({ tableId });
+  const { data: currViewId } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
 
   const setCurrView = api.table.setCurrView.useMutation({

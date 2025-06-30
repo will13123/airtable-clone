@@ -9,7 +9,7 @@ export const tableRouter = createTRPCRouter({
       const table = await db.table.create({
         data: {
           name: input.name,
-          baseId: input.baseId
+          baseId: input.baseId,
         },
       });
       await db.view.create({
@@ -99,9 +99,9 @@ export const tableRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const table = await db.table.findUnique({
         where: { id: input.tableId },
-      })
+      });
       if (!table) return "";
-      return table.currView as string;
+      return table.currView;
     }),
 
   setCurrView: protectedProcedure
