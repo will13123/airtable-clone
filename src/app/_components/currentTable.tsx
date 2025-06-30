@@ -11,6 +11,8 @@ import {
 import { api } from "~/trpc/react";
 import React, {useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import Image from "next/image";
+import CreateView from "./createView";
 
 type RowType = { 
   id: string, 
@@ -32,6 +34,28 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const utils = api.useUtils();
   const { data: name } = api.table.getNameFromId.useQuery({ tableId: tableId });
   const { data, isLoading: rowsLoading } = api.table.getRows.useQuery({ tableId });
+  const { data: views } = api.table.getViews.useQuery({ tableId });
+  const { data: currViewId}= api.table.getCurrView.useQuery({ tableId });
+  const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
+
+  const setCurrView = api.table.setCurrView.useMutation({
+      onSuccess: () => {
+        void utils.table.getCurrView.invalidate({ tableId });
+      },
+    });
+  
+  const [currentViewIdState, setCurrentViewIdState] = React.useState<string>(currViewId ?? "");
+
+  React.useEffect(() => {
+      if (views && earliestView && currViewId === "") {
+        void setCurrView.mutate({ tableId, viewId: earliestView.id });
+        setCurrentViewIdState(earliestView.id);
+      } else {
+        setCurrentViewIdState(currentViewIdState);
+      }
+    }, [views, currViewId, currentViewIdState, earliestView]);
+
+
   const createRow = api.row.create.useMutation({
     onSuccess: () => utils.table.getRows.invalidate({ tableId }),
   });
@@ -130,7 +154,13 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     () =>[
       columnHelper.accessor("id", {
         header: "Row #",
-        cell: (info) => info.row.index + 1,
+        cell: (info) => {
+          return (
+            <div className="text-center">
+              {info.row.index + 1}
+            </div>
+          )
+        },
         enableSorting: false,
         size: 100,
       }),
@@ -167,135 +197,177 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   if (rowsLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>
   if (!name) return 
   return (
-    <div className="p-4">
-      <div 
-        ref={scrollRef} 
-        className="container h-[70dvh] w-[100dvw] overflow-auto bg-gray-100" 
-      >
-        <table 
-          className="h-full w-full text-left rtl:text-right text-gray-500  relative bg-white"
-          style={{ height: virtualizer.getTotalSize() + "px" }}
-        >
-          <thead className="text-gray-700 uppercase bg-gray-50">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id} className="border-b">
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <th 
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      style={{ width: header.getSize() }} 
-                      className="p-2 text-left font-semibold border-r"
-                    >
-                      <div>
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </div>
-                    </th>
-                  )
-                  
-                })}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="w-full">
-            {virtualRows.map((virtualRow) => {
-              const row = table.getRowModel().rows[virtualRow.index];
-              if (!row) return;
-              return (
-                <tr
-                    key={row.id}
-                    className="bg-white border border-gray-200"
-                    style={{
-                      height: `${virtualRow.size}px`,
-                      // transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="border-r h-[45px]"
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
-              )
-            })}
-          </tbody>         
-        </table>
-      </div>
-      <button
-        className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xl gap-2"
-        onClick={handleCreateRow}
-        
-      >
-        Create Row
-      </button>
-      {/* <button
-        className="text-green-500 hover:text-green-700 cursor-pointer"
-        onClick={handleCreateCol}
-      >
-        Create Column
-      </button> */}
-
-
-      {/* Create Column Dropdown */}
-      <div className="relative inline-block">
-        <button
-          onClick={handleColumnDropdown}
-          className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none border-l-2 border-gray-300 cursor-pointer text-xl gap-2"
-        >
-          Create Column
-        </button>
-        <div
-          className={`absolute right-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
-            columnDropdownIsOpen ? 'block' : 'hidden'
-          }`}
-        >
-          <ul className="py-1 text-sm text-gray-700">
-            <li>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setColumnDropdownIsOpen(!columnDropdownIsOpen);
-                  if (type === "text" || type === "number") {
-                    createColumn.mutate({ tableId, type });
-                  } else {
-                    alert("Enter a valid type");
-                  }
+    <div className="flex flex-col h-full">
+      {/* Top bar for table */}
+      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-1 pr-5">
+        <div className="flex flex-1 justify-start items-center gap-2">
+          <p className="text-lg font-bold">Name: {name}</p>
+        </div>
+        <div className="flex-1"></div>
+        <div className="flex flex-row justify-between items-center flex-1">
+          <p className="text-neutral-600 text-lg">Hide Fields</p>
+          <p className="text-neutral-600 text-lg"> Filter</p>
+          <p className="text-neutral-600 text-lg">Sort</p>
+          <p className="text-neutral-600 text-lg">Search</p>
+        </div>
+      </header>
+      {/*Main Box*/}
+      <div className="flex">
+        {/* Sidebar */}
+        <div className=" text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-2">
+          <div className="p-2 gap-4 flex flex-col">
+            <CreateView tableId={tableId}/>
+            
+            {views?.map((view) => (
+              <button
+                key={view.id}
+                className={`p-3 text-base cursor-pointer pr-10 text-left ${
+                  currViewId === view.id
+                    ? 'bg-gray-100'
+                    : 'hover:bg-gray-100 bg-white'
+                }`}
+                onClick={() => {
+                  void setCurrView.mutate({ tableId, viewId: view.id });
+                  setCurrentViewIdState(view.id);
                 }}
-                className="flex flex-col gap-2"
               >
-                <input
-                  type="text"
-                  placeholder="text or number"
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
-                />
-                <button
-                  type="submit"
-                  className="rounded-md mb-4 bg-blue-400 text-white px-4 py-2 font-semibold transition hover:bg-blue-400 shadow cursor-pointer"
-                  disabled={createColumn.isPending}
-                >
-                  {createColumn.isPending ? "Creating..." : "Create"}
-                </button>
-              </form>
-            </li>
-            <li>
+                {view.name}
+              </button>
+            ))}
+
+          
+          </div>            
+        </div>
+        {/* Main Table */}
+        <div className="flex flex-col h-[80dvh]">
+          <div 
+            ref={scrollRef} 
+            className="container h-[80dvh] w-[100dvw] overflow-auto flex-1 bg-gray-100 border border-gray-200 border-b-1 " 
+          >
+            <table 
+              className="h-full w-full text-left rtl:text-right text-gray-500 relative bg-white"
+              style={{ height: virtualizer.getTotalSize() + "px" }}
+            >
+              <thead className="text-gray-700 uppercase bg-gray-50">
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id} className="border-b">
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <th 
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          style={{ width: header.getSize() }} 
+                          className="p-2 text-left font-semibold border-r"
+                        >
+                          <div>
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          </div>
+                        </th>
+                      )
+                      
+                    })}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="w-full">
+                {virtualRows.map((virtualRow) => {
+                  const row = table.getRowModel().rows[virtualRow.index];
+                  if (!row) return;
+                  return (
+                    <tr
+                        key={row.id}
+                        className="bg-white border border-gray-200"
+                        style={{
+                          height: `${virtualRow.size}px`,
+                          // transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td
+                            key={cell.id}
+                            className="border-r h-[45px]"
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        ))}
+                      </tr>
+                  )
+                })}
+              </tbody>         
+            </table>
+          </div>
+          {/* Create row/column */}
+          <div className="flex flex-row">
+            <button
+              className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xl gap-2"
+              onClick={handleCreateRow}
+              
+            >
+              Create Row
+            </button>
+
+
+            {/* Create Column Dropdown */}
+            <div className="relative inline-block">
               <button
                 onClick={handleColumnDropdown}
-                className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 border-1"
+                className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none border-l-2 border-gray-300 cursor-pointer text-xl gap-2"
               >
-                Close
+                Create Column
               </button>
-            </li>
-          </ul>
+              <div
+                className={`absolute left-0 bottom-full w-70 mb-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
+                  columnDropdownIsOpen ? 'block' : 'hidden'
+                }`}
+              >
+                <ul className="py-1 text-sm text-gray-700">
+                  <li>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        setColumnDropdownIsOpen(!columnDropdownIsOpen);
+                        if (type === "text" || type === "number") {
+                          createColumn.mutate({ tableId, type });
+                        } else {
+                          alert("Enter a valid type");
+                        }
+                      }}
+                      className="flex flex-col gap-2"
+                    >
+                      <input
+                        type="text"
+                        placeholder="text or number"
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
+                        className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-md mb-4 bg-blue-400 text-white px-4 py-2 font-semibold transition hover:bg-blue-400 shadow cursor-pointer"
+                        disabled={createColumn.isPending}
+                      >
+                        {createColumn.isPending ? "Creating..." : "Create"}
+                      </button>
+                    </form>
+                  </li>
+                  <li>
+                    <button
+                      onClick={handleColumnDropdown}
+                      className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 border-1"
+                    >
+                      Close
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      
       {rows.length === 0 && <p className="mt-2 text-center">No rows available</p>}
     </div>
   )

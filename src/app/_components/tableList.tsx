@@ -49,7 +49,7 @@ export default function TableList({ baseId }: { baseId: string }) {
     <div>
       {tables.length > 0 && (
           <div className="flex flex-col">
-            <div className="flex border-b border-gray-300 flex-row bg-gray-100">
+            <div className="flex border-b border-gray-300 flex-row bg-gray-100 rounded-sm">
               {tables.map((table) => (
                 <button
                   key={table.id}
@@ -69,7 +69,7 @@ export default function TableList({ baseId }: { baseId: string }) {
               <CreateTable baseId={baseId}/>
             </div>
             {(currTableId !== "" && currTableId) && (
-              <div className="border border-gray-300 border-t-0 bg-white">
+              <div className="border border-gray-300 border-t-0 bg-white h-full">
                 <CurrentTable tableId={currTableId} />
               </div>
             )}

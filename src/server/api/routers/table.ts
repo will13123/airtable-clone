@@ -12,6 +12,14 @@ export const tableRouter = createTRPCRouter({
           baseId: input.baseId
         },
       });
+      await db.view.create({
+        data: {
+          name: "Default View",
+          tableId: table.id,
+          filters: [],
+          sort: []
+        },
+      });
       return table;
     }),
 
@@ -49,6 +57,64 @@ export const tableRouter = createTRPCRouter({
         where: { id: input.cellId },
         data: { value: input.value },
       })
+    }),
+
+  createView: protectedProcedure
+    .input(z.object({ tableId: z.string(), name: z.string() }))
+    .mutation(async ({ input }) => {
+      const view = await db.view.create({
+        data: {
+          name: input.name,
+          tableId: input.tableId,
+          filters: [],
+          sort: []
+        },
+      });
+      return view;
+    }),
+  
+  getViews: protectedProcedure
+    .input(z.object({ tableId: z.string() }))
+    .query(async ({ input} ) => {
+      const table = await db.table.findUnique({
+        where: {id: input.tableId },
+        include: {views: true}
+      })
+      if (!table) return;
+      return table.views
+    }),
+
+  earliestView: protectedProcedure
+    .input(z.object({ tableId: z.string() }))
+    .query(async ({ input }) => {
+      const earliestView = await db.view.findFirst({
+        where: { tableId: input.tableId },
+        orderBy: { createdAt: "asc" }, 
+      });
+      return earliestView;
+    }),
+  
+  getCurrView: protectedProcedure
+    .input(z.object({ tableId: z.string() }))
+    .query(async ({ input }) => {
+      const table = await db.table.findUnique({
+        where: { id: input.tableId },
+      })
+      if (!table) return "";
+      return table.currView as string;
+    }),
+
+  setCurrView: protectedProcedure
+    .input(z.object({ tableId: z.string(), viewId: z.string() }))
+    .mutation(async ({ input }) => {
+      const view = await db.view.findUnique({
+        where: { tableId: input.tableId, id: input.viewId },
+      });
+      if (!view) return;
+      await db.table.update({
+        where: { id: input.tableId },
+        data: { currView: input.viewId },
+      });
     }),
 });
 
