@@ -75,7 +75,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           </div>            
         </div>
         {/* Main Table */}
-        <CurrentView viewId={currViewId} tableId={tableId}/>
+        {currViewId && <CurrentView viewId={currViewId} tableId={tableId}/>}
         
       </div>
       

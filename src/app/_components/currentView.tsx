@@ -72,6 +72,7 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
     cell: CellType | undefined;
   }) => {
     const [value, setValue] = useState(initialValue);
+    const [originalValue, setOriginalValue] = useState(initialValue);
     const textRegex = /^[a-zA-Z]+$/;
     const numberRegex = /^\d+$/;
     
@@ -81,26 +82,26 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
     if (!cell) return;
     const regex = cell.type === "text" ? textRegex : numberRegex;
 
-    const onBlur = () => {
-      if (cell && cell.value !== value && cell.cellId) {
-        // Check for if the value matches the type
-        if (regex.test(value)) {
-          updateCell.mutate({
-            cellId: cell.cellId,
-            value,
-          });
-        } else {
-          alert(`Please input only ${cell.type === "text" ? "letters" : "numbers"}`);
-        }
-      }
-    };
-
     return (
       <input
         className="w-full h-full p-2 border-0 rounded-none"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onBlur={onBlur}
+        onBlur={(e) => {
+          if (cell && cell.value !== value && cell.cellId) {
+            // Check for if the value matches the type
+            if (regex.test(value)) {
+              updateCell.mutate({
+                cellId: cell.cellId,
+                value,
+              });
+              setOriginalValue(value);
+            } else {
+              alert(`Please input only ${cell.type === "text" ? "letters" : "numbers"}`);
+              setValue(originalValue);
+            }
+          }
+        }}
       />
     );
   };
@@ -268,6 +269,7 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
                           } else {
                             alert("Enter a valid type");
                           }
+                          setType("");
                         }}
                         className="flex flex-col gap-2"
                       >
