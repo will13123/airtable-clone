@@ -101,6 +101,7 @@ export const tableRouter = createTRPCRouter({
         where: { id: input.tableId },
       });
       if (!table) return "";
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return table.currView;
     }),
 
