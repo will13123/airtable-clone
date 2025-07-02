@@ -3,10 +3,23 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 
-export default function EditColumn({ columnId }: { columnId: string }) {
+export default function EditColumn({ columnId, viewId }: { columnId: string, viewId: string }) {
   const utils = api.useUtils();
   const [isOpen, setOpen] = useState(false);
   const { data: type } = api.column.getType.useQuery({ columnId });
+  const updateSort = api.view.updateSort.useMutation({
+    onSuccess: () => {
+      void utils.view.getViewRows.invalidate({ viewId });
+      void utils.view.getSorts.invalidate({ viewId });
+    },
+  });
+  const removeSort = api.view.removeSort.useMutation({
+    onSuccess: () => {
+      void utils.view.getViewRows.invalidate({ viewId });
+      void utils.view.getSorts.invalidate({ viewId });
+    },
+  });
+
   if (columnId === "id") return(<div></div>); // For the row no.
   const handleDropDown = () => {
     setOpen(!isOpen);
@@ -31,6 +44,10 @@ export default function EditColumn({ columnId }: { columnId: string }) {
           <li>
             <button
               className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
+              onClick={() => {
+                updateSort.mutate({ viewId, columnId: columnId, direction: "asc" });
+                setOpen(false)
+              }}
             >
               {
                 (type === "text")
@@ -38,12 +55,16 @@ export default function EditColumn({ columnId }: { columnId: string }) {
                   : <div>Sort Ascending</div> 
               }
               <svg className="ml-2 w-6 h-6 fill-current inline-block" viewBox="0 0 22 22">
-                <use href="/icon_definitions.svg#SortAscending"/>
+                <use href="/icon_definitions.svg#SortDescending"/>
               </svg>
             </button>
             
             <button
               className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
+              onClick={() => {
+                updateSort.mutate({ viewId, columnId: columnId, direction: "desc" });
+                setOpen(false)
+              }}
             >
               {
                 (type === "text")
@@ -51,8 +72,17 @@ export default function EditColumn({ columnId }: { columnId: string }) {
                   : <div>Sort Descending</div> 
               }
               <svg className="ml-2 w-6 h-6 fill-current inline-block" viewBox="0 0 22 22">
-                <use href="/icon_definitions.svg#SortDescending"/>
+                <use href="/icon_definitions.svg#SortAscending"/>
               </svg>
+            </button>
+            <button
+              className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
+              onClick={() => {
+                removeSort.mutate({ viewId, columnId: columnId});
+                setOpen(false)
+              }}
+            >
+              Remove Sort
             </button>
           </li>
         </ul>

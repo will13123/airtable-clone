@@ -23,6 +23,7 @@ export const tableRouter = createTRPCRouter({
       return table;
     }),
 
+    // implement cursor pagination
   getRows: protectedProcedure
     .input(z.object({ tableId: z.string() }))
     .query(async ({ input }) => {
@@ -50,6 +51,7 @@ export const tableRouter = createTRPCRouter({
       return table?.name;
     }),
 
+    // implement pagination?
   updateCell: protectedProcedure
     .input(z.object({ cellId: z.string(), value: z.string() }))
     .mutation(async ({ input }) => {      
@@ -125,5 +127,17 @@ export const tableRouter = createTRPCRouter({
         data: { currView: input.viewId },
       });
     }),
+  
+    getColumns: protectedProcedure
+      .input(z.object({ tableId: z.string() }))
+      .query(async ({ input }) => {
+        const table = await db.table.findUnique({
+        where: { id: input.tableId },
+        include: { columns: true }
+      });
+      if (!table) return [];
+      return table.columns;
+      })
+      
 });
 

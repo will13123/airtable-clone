@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { randomString } from "./column";
+
 
 export const rowRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ tableId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const row = await db.row.create({
         data: {
           tableId: input.tableId,
@@ -21,12 +23,14 @@ export const rowRouter = createTRPCRouter({
         tableId: input.tableId,
         columnId: col.id,
         rowId: row.id,
-        value: "", 
+        value: (col.type === "number") ? Math.floor(Math.random() * 1000).toString() : randomString(), 
       }));
       await db.cell.createMany({
         data: cells,
       });
 
       return row;
-    })
+    }),
+
+    
 });

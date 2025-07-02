@@ -4,13 +4,14 @@ import { api } from "~/trpc/react";
 import CreateView from "./createView";
 import CurrentView from "./currentView";
 import { useState, useEffect } from "react";
+import SortButton from "./sortButton";
+import FilterButton from "./filterButton";
 
 
 export default function CurrentTable({ tableId }: { tableId: string }) {
   const utils = api.useUtils();
   const { data: name } = api.table.getNameFromId.useQuery({ tableId: tableId });
   const { data: views } = api.table.getViews.useQuery({ tableId });
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: currViewId } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
 
@@ -20,7 +21,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     },
   });
   
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const [currentViewIdState, setCurrentViewIdState] = useState<string>(currViewId ?? "");
 
   useEffect(() => {
@@ -42,8 +42,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         <div className="flex-1"></div>
         <div className="flex flex-row justify-between items-center flex-1">
           <p className="text-neutral-600 text-lg">Hide Fields</p>
-          <p className="text-neutral-600 text-lg"> Filter</p>
-          <p className="text-neutral-600 text-lg">Sort</p>
+          <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
+          <SortButton viewId={currViewId ?? ""}/>
           <p className="text-neutral-600 text-lg">Search</p>
         </div>
       </header>
@@ -75,7 +75,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           </div>            
         </div>
         {/* Main Table */}
-        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
         {currViewId && <CurrentView viewId={currViewId} tableId={tableId}/>}
         
       </div>
