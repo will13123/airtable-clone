@@ -308,4 +308,31 @@ export const viewRouter = createTRPCRouter({
       });
 
     }),
+  removeFilter: protectedProcedure
+    .input(
+      z.object({
+        viewId: z.string(),
+        columnId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { viewId, columnId } = input;
+
+      const view = await db.view.findUnique({
+        where: { id: viewId },
+      });
+      if (!view) throw new Error("View not found");
+
+      const updatedFilters = (view.filters || []).filter(
+        (sort) => !sort.startsWith(`${columnId}:`)
+      )
+
+      const updatedView = await db.view.update({
+        where: { id: viewId },
+        data: { filters: updatedFilters },
+      });
+
+      return updatedView;
+    }),
+  
 });
