@@ -7,10 +7,13 @@ export default function ToggleButton() {
   useEffect(() => {
     const handleToggle = () => {
       const sidebar = document.querySelector(".sidebar-panel");
-      if (sidebar) {
-        const isOpen = sidebar.classList.contains("translate-x-0");
-        sidebar.classList.toggle("translate-x-0", !isOpen);
-        sidebar.classList.toggle("-translate-x-full", isOpen);
+      const main = document.querySelector(".main-content");
+      if (sidebar && main) {
+        const isOpen = sidebar.classList.contains("w-72");
+        sidebar.classList.toggle("w-72", !isOpen);
+        sidebar.classList.toggle("w-16", isOpen);
+        main.classList.toggle("ml-72", !isOpen);
+        main.classList.toggle("ml-16", isOpen);
       }
     };
 
@@ -27,14 +30,10 @@ export default function ToggleButton() {
   }, []);
 
   return (
-    <button className="p-2 bg-gray-300 rounded-l focus:outline-none toggle-button">
-      <Image
-        src="/sidebar-logo.png" 
-        alt="Toggle Sidebar"
-        width={40}
-        height={40}
-        className="object-contain"
-      />
+    <button className="p-2 rounded-l focus:outline-none toggle-button cursor-pointer">
+      <svg className="w-6 h-6 fill-current inline-block" viewBox="0 0 22 22">
+        <use href="/icon_definitions.svg#List"/>
+      </svg>
     </button>
   );
 }

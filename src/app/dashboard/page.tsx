@@ -23,20 +23,20 @@ export default async function Dashboard() {
 
   return (
     <div className="bg-neutral-300">
-      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-6 pl-10 pr-10">
+      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-3 pl-3">
         <div className="flex flex-1 justify-start items-center gap-2">
           <ToggleButton/>
           <Image
             src="/airtable-logo.webp" 
             alt="Airtable Logo"
-            width={40}
-            height={40}
+            width={30}
+            height={30}
             className="object-contain"
           />
-          <p className="text-xl font-bold">Airtable</p>
+          <p className="text-lg font-bold">Airtable</p>
         </div>
         <div className="flex-row justify-items-center justify-center">
-          <button className="bg-white hover:shadow-lg text-neutral-400 py-2 px-30 rounded-full border border-solid border-neutral-300">
+          <button className="bg-white hover:shadow-lg text-neutral-400 py-1 px-35 rounded-full border border-solid border-neutral-300">
             Search
           </button>
         </div>
@@ -44,16 +44,8 @@ export default async function Dashboard() {
           <Dropdown profileImage={profileImage} name={name} email={email}/>
         </div>
       </header>
-      <Sidebar/>
-      <main className="flex min-h-screen flex-col bg-neutral-50 text-black p-6 pl-50 pt-20">
-          <h1 className="text-4xl font-bold mb-6">Home</h1>
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Your Bases</h2>
-            <BaseList userId={session.user.id}/>
-            <h2 className="text-2xl font-semibold mb-4">Create Base</h2>
-            <CreateBase/>
-          </section>
-      </main>
+      <Sidebar userId={session.user.id}/>
+      
     </div>
   );
 }

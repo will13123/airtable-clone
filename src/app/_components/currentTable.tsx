@@ -35,7 +35,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   return (
     <div className="flex flex-col h-full">
       {/* Top bar for table */}
-      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-1 pr-5">
+      <header className="flex justify-center items-center bg-white border-b-1 border-solid border-neutral-300 p-1 pr-5">
         <div className="flex flex-1 justify-start items-center gap-2">
           <p className="text-lg font-bold">Name: {name}</p>
         </div>

@@ -14,13 +14,13 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
   if (!id) return <div className="text-gray-600 text-xl">Error loading base</div>
   return (
     <div className="flex h-screen">
-        <div className="w-18 text-white flex-shrink-0 flex-col justify-between border-neutral-500 border-r-2">
+        <div className="w-14 text-white flex-shrink-0 flex-col justify-between border-neutral-300 border-r-1">
           <div className="p-4">
             <Image
               src="/airtable-logo-black.svg" 
               alt="Airtable Logo Black"
-              width={30}
-              height={30}
+              width={25}
+              height={25}
               className="w-90% h-auto"
             />
           </div>            
@@ -28,28 +28,28 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
         {/* Main Section */}
         <div className="flex-1"> 
           {/* Top bar */}
-          <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-4">
+          <header className="flex justify-center items-center bg-white border-b-1 border-solid border-neutral-300 p-3">
             <div className="flex flex-1 justify-start items-center gap-2">
               <Image
                 src="/airtable-logo.webp" 
                 alt="Airtable Logo"
-                width={40}
-                height={40}
+                width={30}
+                height={30}
                 className="object-contain"
               />
-              <p className="text-2xl font-bold">Name: {name}</p>
+              <p className="text-lg font-bold">Name: {name}</p>
             </div>
             <div className="flex flex-row justify-between items-center flex-1">
-              <p className="text-neutral-600 text-xl">Data</p>
-              <p className="text-neutral-600 text-xl"> Automations</p>
-              <p className="text-neutral-600 text-xl">Interfaces</p>
-              <p className="text-neutral-600 text-xl">Forms</p>
+              <p className="text-neutral-600">Data</p>
+              <p className="text-neutral-600"> Automations</p>
+              <p className="text-neutral-600">Interfaces</p>
+              <p className="text-neutral-600">Forms</p>
             </div>
             <div className="justify-items-end flex-1">
                 <Link
                   href={'/dashboard'}
                 >
-                  <p className="text-neutral-600 text-xl cursor-pointer text-right">Back</p>
+                  <p className="text-neutral-600 cursor-pointer text-right">Back</p>
                 </Link>
             </div>
           </header>

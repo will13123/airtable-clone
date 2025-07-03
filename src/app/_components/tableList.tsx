@@ -1,7 +1,6 @@
 "use client";
 
-
-import * as React from 'react'
+import { useEffect, useState } from 'react'
 
 import { api } from "~/trpc/react";
 import CurrentTable from './currentTable';
@@ -19,10 +18,10 @@ export default function TableList({ baseId }: { baseId: string }) {
     },
   });
 
-  const [currentTableIdState, setCurrentTableIdState] = React.useState(currTableId ?? "");
+  const [currentTableIdState, setCurrentTableIdState] = useState(currTableId ?? "");
 
   // Check to see if there is a current table being viewed, else set it as the earliest made one by default
-  React.useEffect(() => {
+  useEffect(() => {
     // If they dont exist, refresh
     if (!earliestTable) {
       void utils.base.earliestTable.invalidate({ baseId });
@@ -35,7 +34,13 @@ export default function TableList({ baseId }: { baseId: string }) {
     }
   }, [tables, currTableId, currentTableIdState, earliestTable]);
 
-  
+  // Update local state when currTableId changes
+  useEffect(() => {
+    if (currTableId) {
+      setCurrentTableIdState(currTableId);
+    }
+  }, [currTableId]);
+
   if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
   if (!tables || tables.length === 0) {
@@ -46,22 +51,28 @@ export default function TableList({ baseId }: { baseId: string }) {
           <CreateTable baseId={baseId}/>
         </div>
       </div>
-  );
+    );
   }
   
   return (
-    <div>
-      {tables.length > 0 && (
-          <div className="flex flex-col">
-            <div className="flex border-b border-gray-300 flex-row bg-gray-100 rounded-sm">
-              {tables.map((table) => (
+  <div>
+    {tables.length > 0 && (
+      <div className="flex flex-col">
+        <div className="relative bg-pink-50 border-b border-gray-300">
+          <div className="flex items-end relative">
+            {tables.map((table, index) => {
+              const elements = [];
+              elements.push(
                 <button
-                  key={table.id}
-                  className={`px-4 py-2 border-b-2 transition-colors text-xl ${
-                    currTableId === table.id
-                      ? 'border-blue-500 bg-white text-black font-medium'
-                      : 'border-transparent bg-gray-100 text-gray-600 hover:bg-gray-50 hover:border-gray-200'
-                  }`}
+                  key={`tab-${table.id}`}
+                  className={`
+                    flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 
+                    rounded-t-md border-l border-r relative -mb-px
+                    ${currTableId === table.id 
+                      ? "bg-white text-gray-900 border-gray-300 border-b-white z-10"
+                      : "bg-pink-50 text-gray-600 border-transparent hover:bg-pink-100 hover:text-gray-900 border-b border-b-gray-300"
+                    }
+                  `}
                   onClick={() => {
                     void setCurrTable.mutate({ baseId, tableId: table.id });
                     setCurrentTableIdState(table.id);
@@ -69,19 +80,35 @@ export default function TableList({ baseId }: { baseId: string }) {
                 >
                   {table.name}
                 </button>
-              ))}
-              <CreateTable baseId={baseId}/>
-            </div>
-            {(currentTableIdState !== "" && currentTableIdState) && (
-              <div className="border border-gray-300 border-t-0 bg-white h-full">
-                <CurrentTable tableId={currentTableIdState} />
-              </div>
+              );
+              
+              // Add divider if needed
+              if (index < tables.length - 1 && 
+                  currTableId !== table.id && 
+                  currTableId !== tables[index + 1]?.id) {
+                elements.push(
+                  <div key={`divider-${table.id}`} className="h-6 w-px bg-gray-300 mx-1 self-center"></div>
+                );
+              }
+              
+              return elements;
+            })}
+            
+            {tables.length > 0 && currTableId !== tables[tables.length - 1]?.id && (
+              <div className="h-6 w-px bg-gray-300 mx-1 self-center"></div>
             )}
+            
+            <CreateTable baseId={baseId}/>
           </div>
-          
-        )
-      }
-      
-    </div>
-  )
+        </div>
+        
+        {(currentTableIdState !== "" && currentTableIdState) && (
+          <div className="border border-gray-300 border-t-0 bg-white h-full">
+            <CurrentTable tableId={currentTableIdState} />
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
 }

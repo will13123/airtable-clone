@@ -21,7 +21,7 @@ export default function BaseList({ userId }: { userId: string }) {
           key={base.id}
           href={`/base?id=${base.id}&name=${base.name}`}
         >
-          <div key={base.id} className="bg-white p-10 rounded shadow hover:shadow-xl content-center">
+          <div key={base.id} className="bg-white p-9 rounded shadow hover:shadow-xl content-center">
             {base.name}
           </div>
         </Link>
