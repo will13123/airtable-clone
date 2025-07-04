@@ -335,4 +335,44 @@ export const viewRouter = createTRPCRouter({
       return updatedView;
     }),
   
+  searchCells: protectedProcedure
+    .input(z.object({ 
+      viewId: z.string(),
+      searchTerm: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!input.searchTerm.trim()) {
+        return []; 
+      }
+
+      const view = await ctx.db.view.findUnique({
+        where: { id: input.viewId },
+        select: { tableId: true }
+      });
+
+      if (!view) {
+        throw new Error("View not found");
+      }
+
+      const matchingCells = await ctx.db.cell.findMany({
+        where: {
+          row: {
+            tableId: view.tableId
+          },
+          value: {
+            contains: input.searchTerm,
+            mode: "insensitive"
+          }
+        },
+        select: {
+          id: true,
+          value: true,
+          columnId: true,
+          rowId: true
+        }
+      });
+
+      return matchingCells;
+    }),
+  
 });

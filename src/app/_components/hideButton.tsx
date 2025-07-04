@@ -58,14 +58,6 @@ export default function HideButton({ columns, hiddenColumns, onToggleColumn }: H
                 );
               })}
             </div>
-            <div className="mt-3 pt-2 border-t border-gray-200">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="w-full py-2 px-3 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}

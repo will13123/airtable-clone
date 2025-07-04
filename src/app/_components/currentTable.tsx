@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import SortButton from "./sortButton";
 import FilterButton from "./filterButton";
 import HideButton from "./hideButton";
+import SearchButton from "./searchButton";
 
 export default function CurrentTable({ tableId }: { tableId: string }) {
   const utils = api.useUtils();
@@ -28,6 +29,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   
   // State for hidden columns
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  
+  // State for search
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Function to toggle column visibility
   const handleToggleColumn = (columnId: string) => {
@@ -36,6 +40,11 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         ? prev.filter(id => id !== columnId)
         : [...prev, columnId]
     );
+  };
+
+  // Function to handle search
+  const handleSearch = (search: string) => {
+    setSearchTerm(search);
   };
 
   useEffect(() => {
@@ -65,7 +74,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           />
           <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
           <SortButton viewId={currViewId ?? ""}/>
-          <p className="text-neutral-600 text-sm">Search</p>
+          <SearchButton onSearch={handleSearch}/>
         </div>
       </header>
       {/*Main Box*/}
@@ -93,8 +102,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                 {view.name}
               </button>
             ))}
-
-          
           </div>            
         </div>
         {/* Main Table */}
@@ -103,11 +110,10 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             viewId={currViewId} 
             tableId={tableId}
             hiddenColumns={hiddenColumns}
+            searchTerm={searchTerm}
           />
         )}
-        
       </div>
-      
     </div>
   )
 }

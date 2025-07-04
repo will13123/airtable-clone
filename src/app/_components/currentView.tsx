@@ -29,16 +29,25 @@ const columnHelper = createColumnHelper<RowType>();
 export default function CurrentView({ 
   viewId, 
   tableId, 
-  hiddenColumns = [] 
+  hiddenColumns = [],
+  searchTerm = ""
 }: { 
   viewId: string, 
   tableId: string,
-  hiddenColumns?: string[]
+  hiddenColumns?: string[],
+  searchTerm?: string
 }) {
   const utils = api.useUtils();
   const { data, isLoading: rowsLoading } = api.view.getViewRows.useQuery({ viewId });
   const { data: sorts } = api.view.getSorts.useQuery({ viewId });
   const { data: filters } = api.view.getFilters.useQuery({ viewId });
+  
+  // Get matching cells for highlighting
+  const { data: matchingCells } = api.view.searchCells.useQuery(
+    { viewId, searchTerm },
+    { enabled: !!searchTerm.trim() }
+  );
+
   const createRow = api.row.create.useMutation({
     onSuccess: () => utils.view.getViewRows.invalidate({ viewId }),
   });
@@ -64,6 +73,9 @@ export default function CurrentView({
   // Filter out hidden columns
   const visibleColumns = columns.filter(column => !hiddenColumns.includes(column.id));
 
+  // Create a set of matching cell IDs for quick lookup
+  const matchingCellIds = new Set(matchingCells?.map(cell => cell.id) ?? []);
+
   const sortColumnIds = sorts
     ? sorts.map((sort) => {
         return sort.split(":")[0] ?? ""
@@ -83,7 +95,7 @@ export default function CurrentView({
     getScrollElement: () => scrollRef.current,
     overscan: 10,
     horizontal: false,
-    measureElement: () => 45, // Force exact measurement
+    measureElement: () => 45,
   });
 
   const virtualRows = virtualizer.getVirtualItems();
@@ -112,6 +124,8 @@ export default function CurrentView({
     if (!cell) return null;
 
     const regex = cell.type === "text" ? textRegex : numberRegex;
+    const isHighlighted = matchingCellIds.has(cell.cellId!);
+
     return (
       <div className="flex items-center h-full">
         {isFirstColumn && (
@@ -120,7 +134,13 @@ export default function CurrentView({
           </div>
         )}
         <input
-          className={`w-full h-full p-2 border-0 text-right text-sm rounded-none ${sortColumnIds.includes(cell.columnId) ? "bg-orange-100" : ""} ${filterColumnIds.includes(cell.columnId) ? "bg-green-100" : ""}`}
+          className={`w-full h-full p-2 border-0 text-right text-sm rounded-none ${
+            sortColumnIds.includes(cell.columnId) ? "bg-orange-100" : ""
+          } ${
+            filterColumnIds.includes(cell.columnId) ? "bg-green-100" : ""
+          } ${
+            isHighlighted ? "bg-yellow-200" : ""
+          }`}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => {
@@ -179,7 +199,7 @@ export default function CurrentView({
           {
             id: column.id,
             header: `${column.name}`,
-            meta: { type: column.type }, // Pass type for EditableCell
+            meta: { type: column.type },
             size: 200
           }
         )
@@ -204,12 +224,20 @@ export default function CurrentView({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Search Results Info */}
+      {searchTerm && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 text-sm text-blue-800">
+          {`${matchingCells?.length ?? 0} results found for ${searchTerm}`}
+        </div>
+      )}
+      
       {/* Main Table */}
       <div className="flex flex-col h-[80dvh]">
         <div 
           ref={scrollRef} 
           className="h-[80dvh] w-full overflow-auto flex-1 border border-gray-200 border-b-1"
         >
+          {/* Rest of the table implementation remains the same */}
           <table
             className="h-full text-left rtl:text-right text-gray-500 relative bg-white"
             style={{ 
@@ -283,7 +311,8 @@ export default function CurrentView({
             </tbody>
           </table>
         </div>
-        {/* Create row/column */}
+        
+        {/* Create row/column section remains the same */}
         <div className="flex flex-row">
           <button
             className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xl gap-2"
