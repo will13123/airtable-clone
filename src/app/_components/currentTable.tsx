@@ -87,7 +87,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             {views?.map((view) => (
               <button
                 key={view.id}
-                className={`p-3 text-sm cursor-pointer pr-10 text-left ${
+                className={`p-3 text-sm cursor-pointer pr-15 text-left ${
                   currViewId === view.id
                     ? 'bg-gray-100'
                     : 'hover:bg-gray-100 bg-white'

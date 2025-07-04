@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import { api } from '~/trpc/react';
 
 const textOperators = [
-  { value: 'contains', label: 'Contains' },
-  { value: 'not_contains', label: 'Does not contain' },
-  { value: 'equal_to', label: 'Equals' },
-  { value: 'not_equal_to', label: 'Does not equal' },
-  { value: 'is_empty', label: 'Is empty' },
-  { value: 'is_not_empty', label: 'Is not empty' }
+  { value: 'contains', label: 'contains' },
+  { value: 'not_contains', label: 'does not contain' },
+  { value: 'equal_to', label: 'equals' },
+  { value: 'not_equal_to', label: 'does not equal' },
+  { value: 'is_empty', label: 'is empty' },
+  { value: 'is_not_empty', label: 'is not empty' }
 ];
 
 const numberOperators = [
-  { value: 'equal_to', label: 'Equals' },
-  { value: 'not_equal_to', label: 'Does not equal' },
-  { value: 'greater_than', label: 'Greater than' },
-  { value: 'greater_than_equal', label: 'Greater than or equal' },
-  { value: 'less_than', label: 'Less than' },
-  { value: 'less_than_equal', label: 'Less than or equal' },
-  { value: 'is_empty', label: 'Is empty' },
-  { value: 'is_not_empty', label: 'Is not empty' }
+  { value: 'equal_to', label: 'equals' },
+  { value: 'not_equal_to', label: 'does not equal' },
+  { value: 'greater_than', label: 'greater than' },
+  { value: 'greater_than_equal', label: 'greater than or equal' },
+  { value: 'less_than', label: 'less than' },
+  { value: 'less_than_equal', label: 'less than or equal' },
+  { value: 'is_empty', label: 'is empty' },
+  { value: 'is_not_empty', label: 'is not empty' }
 ];
 
 
@@ -45,7 +45,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
     : []
 
   const availableOperators = newFilter.type === "number" ? numberOperators : textOperators;
-  
+  const allOperators = [...textOperators, ...numberOperators];
   const needsValueInput = newFilter.operator && !['is_empty', 'is_not_empty'].includes(newFilter.operator);
   const updateFilter = api.view.updateFilter.useMutation({
     onSuccess: () => {
@@ -73,11 +73,21 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
         <ul className="py-1 text-sm text-gray-700">
           <li>
             {formattedFilters.map((filter) => {
-              return (
-                <div key={filter.columnId}>
-                  {filter.columnId}: {filter.operator}: {filter.value}
-                </div>
-              )
+              const foundCol = columns.find(c => c.id === filter.columnId);
+              const colName = foundCol?.name ?? "";
+              const foundFilter = allOperators.find(f => f.value === filter.operator);
+              if (foundFilter) {
+                return (
+                  <div key={filter.columnId}>
+                    {colName} {foundFilter.label} {filter.value}
+                  </div>                
+                )
+              } else {
+                return (
+                  <div key={filter.columnId}>Error loading filters</div>
+                )
+              }
+              
             })}
           </li>
           <li>
