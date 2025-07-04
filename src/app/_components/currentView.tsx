@@ -188,7 +188,7 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
   if (rowsLoading && !data) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Main Table */}
       <div className="flex flex-col h-[80dvh]">
         <div 

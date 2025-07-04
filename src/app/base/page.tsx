@@ -14,7 +14,7 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
   if (!id) return <div className="text-gray-600 text-xl">Error loading base</div>
   return (
     <div className="flex h-screen">
-        <div className="w-14 text-white flex-shrink-0 flex-col justify-between border-neutral-300 border-r-1">
+        <div className="w-[3%] text-white flex-shrink-0 flex-col justify-between border-neutral-300 border-r-1">
           <div className="p-4">
             <Image
               src="/airtable-logo-black.svg" 
@@ -26,7 +26,7 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
           </div>            
         </div>
         {/* Main Section */}
-        <div className="flex-1"> 
+        <div className="flex-1 w-[97%]"> 
           {/* Top bar */}
           <header className="flex justify-center items-center bg-white border-b-1 border-solid border-neutral-300 p-3">
             <div className="flex flex-1 justify-start items-center gap-2">

@@ -53,7 +53,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         </div>
       </header>
       {/*Main Box*/}
-      <div className="flex">
+      <div className="flex w-full">
         {/* Sidebar */}
         <div className=" text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-1">
           <div className="p-2 flex flex-col">
