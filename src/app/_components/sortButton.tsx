@@ -37,7 +37,7 @@ export default function Sortbutton({ viewId }: { viewId: string }) {
     <div className="relative inline-block">
       <button
         onClick={handleDropDown}
-        className="py-2 px-4 text-gray-600 text-lg hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
+        className="py-2 px-4 text-gray-600 text-sm hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
       >
         Sort
       </button>

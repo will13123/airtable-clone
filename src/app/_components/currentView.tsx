@@ -28,13 +28,6 @@ const columnHelper = createColumnHelper<RowType>();
 
 export default function CurrentTable({ viewId, tableId }: { viewId: string, tableId: string }) {
   const utils = api.useUtils();
-  // const { data, isLoading, fetchNextPage, hasNextPage } = api.view.getViewRows.useInfiniteQuery(
-  //   { viewId, limit: 100 },
-  //   {
-  //     getNextPageParam: (lastPage) => lastPage?.nextCursor,
-  //     initialCursor: undefined,
-  //   }
-  // );
   const { data, isLoading: rowsLoading } = api.view.getViewRows.useQuery({ viewId });
   const { data: sorts } = api.view.getSorts.useQuery({ viewId });
   const { data: filters } = api.view.getFilters.useQuery({ viewId });
@@ -71,15 +64,6 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
      })
     : []
 
-
-  // Flatten pages into rows - for cursoor
-  // const rows = data?.pages
-  //   .filter((page): page is NonNullable<typeof page> => page != null)
-  //   .flatMap((page) => page.rows) ?? [];
-  // const columns = data?.pages[0]?.columns ?? [];
-
-  // Add in logic to implement filters, sorts, hide
-
   // Tanstack Virtualisation
   const scrollRef = useRef<HTMLTableSectionElement>(null);
   const virtualizer = useVirtualizer({
@@ -88,14 +72,8 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
     getScrollElement: () => scrollRef.current,
     overscan: 10,
     horizontal: false,
+    measureElement: () => 45, // Force exact measurement
   });
-
-  // useEffect(() => {
-  //   const [lastItem] = virtualizer.getVirtualItems().slice(-1);
-  //   if (lastItem && lastItem.index >= rows.length - 1 && hasNextPage && !isLoading) {
-  //     void fetchNextPage();
-  //   }
-  // }, [virtualizer.getVirtualItems(), rows.length, hasNextPage, fetchNextPage, isLoading]);
 
   const virtualRows = virtualizer.getVirtualItems();
 
@@ -103,9 +81,13 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
   const EditableCell = ({
     initialValue,
     cell,
+    rowNumber,
+    isFirstColumn = false,
   }: {
     initialValue: string;
     cell: CellType | undefined;
+    rowNumber?: number;
+    isFirstColumn?: boolean;
   }) => {
     const [value, setValue] = useState(initialValue);
     const [originalValue, setOriginalValue] = useState(initialValue);
@@ -120,25 +102,32 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
 
     const regex = cell.type === "text" ? textRegex : numberRegex;
     return (
-      <input
-        className={`w-full h-full p-2 border-0 rounded-none ${sortColumnIds.includes(cell.columnId) ? "bg-orange-100" : ""} ${filterColumnIds.includes(cell.columnId) ? "bg-green-100" : ""}`}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={() => {
-          if (cell.cellId && cell.value !== value) {
-            if (regex.test(value)) {
-              updateCell.mutate({
-                cellId: cell.cellId,
-                value,
-              });
-              setOriginalValue(value);
-            } else {
-              alert(`Please input only ${cell.type === "text" ? "letters" : "numbers"}`);
-              setValue(originalValue);
+      <div className="flex items-center h-full">
+        {isFirstColumn && (
+          <div className="text-center text-sm text-gray-400 w-[50px] flex-shrink-0">
+            {rowNumber}
+          </div>
+        )}
+        <input
+          className={`w-full h-full p-2 border-0 text-right text-sm rounded-none ${sortColumnIds.includes(cell.columnId) ? "bg-orange-100" : ""} ${filterColumnIds.includes(cell.columnId) ? "bg-green-100" : ""}`}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => {
+            if (cell.cellId && cell.value !== value) {
+              if (regex.test(value)) {
+                updateCell.mutate({
+                  cellId: cell.cellId,
+                  value,
+                });
+                setOriginalValue(value);
+              } else {
+                alert(`Please input only ${cell.type === "text" ? "letters" : "numbers"}`);
+                setValue(originalValue);
+              }
             }
-          }
-        }}
-      />
+          }}
+        />
+      </div>
     );
   };
 
@@ -149,29 +138,23 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
       const row = info.row.original;
       const column = info.column.columnDef;
       const cell = row.cells.find((c) => c.columnId === column.id);
+      const isFirstColumn = info.column.getIndex() === 0;
+      const rowNumber = info.row.index + 1;
       
       return (
         <EditableCell
           initialValue={initialValue}
           cell={cell}
+          rowNumber={rowNumber}
+          isFirstColumn={isFirstColumn}
         />
       );
     },
-    size: 150,
+    size: 200,
   };
 
   const tableColumns = React.useMemo(
     () => [
-      columnHelper.accessor("id", {
-        header: "Row #",
-        cell: (info) => (
-          <div className="text-center">
-            {info.row.index + 1}
-          </div>
-        ),
-        enableSorting: false,
-        size: 100,
-      }),
       ...columns.map((column) =>
         columnHelper.accessor(
           (row) => {
@@ -180,8 +163,9 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
           },
           {
             id: column.id,
-            header: `${column.name}: ${column.type}`,
+            header: `${column.name}`,
             meta: { type: column.type }, // Pass type for EditableCell
+            size: 200
           }
         )
       ),
@@ -204,26 +188,34 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
   if (rowsLoading && !data) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       {/* Main Table */}
       <div className="flex flex-col h-[80dvh]">
         <div 
           ref={scrollRef} 
-          className="container h-[80dvh] w-[100dvw] overflow-auto flex-1 bg-gray-100 border border-gray-200 border-b-1"
+          className="h-[80dvh] w-full overflow-auto flex-1 border border-gray-200 border-b-1"
         >
           <table
-            className="h-full w-full text-left rtl:text-right text-gray-500 relative bg-white"
-            style={{ height: virtualizer.getTotalSize() + "px" }}
+            className="h-full text-left rtl:text-right text-gray-500 relative bg-white"
+            style={{ 
+              height: virtualizer.getTotalSize() + "px",
+              tableLayout: "fixed",
+            }}
           >
-            <thead className="text-gray-700 uppercase bg-gray-50">
+            <thead className="text-gray-400" style={{ width: "100%" }}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b">
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
                       colSpan={header.colSpan}
-                      style={{ width: header.getSize() }}
-                      className="p-2 text-left font-semibold border-r min-w-[150px]"
+                      className="p-2 text-left text-sm border-r"
+                      style={{
+                        width: "200px",
+                        minWidth: "200px",
+                        maxWidth: "200px",
+                        height: '45px'
+                      }}
                     >
                       <div className="inline-block">
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -234,7 +226,10 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
                 </tr>
               ))}
             </thead>
-            <tbody className="w-full">
+            <tbody 
+              className="w-full relative" 
+              style={{ height: virtualizer.getTotalSize(), width: "100%" }}
+            >
               {virtualRows.map((virtualRow) => {
                 const row = table.getRowModel().rows[virtualRow.index];
                 if (!row) return null;
@@ -243,12 +238,25 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
                     key={row.id}
                     className="bg-white border border-gray-200"
                     style={{
-                      height: `${virtualRow.size}px`,
-                      // transform: `translateY(${virtualRow.start}px)`,
+                      height: '45px',
+                      transform: `translateY(${virtualRow.start}px)`,
+                      position: 'absolute',
+                      top: 0,
+                      left: -1,
+                      width: '100%',
                     }}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="border-r h-[45px]">
+                      <td 
+                        key={cell.id} 
+                        className="border-r h-[45px]"
+                        style={{
+                          width: "200px",
+                          minWidth: "200px",
+                          maxWidth: "200px",
+                          height: '45px'
+                        }}
+                      >
                         {flexRender(cell.column.columnDef.cell, {
                           ...cell.getContext(),
                         })}

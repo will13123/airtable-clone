@@ -35,7 +35,7 @@ export default function EditColumn({ columnId, viewId }: { columnId: string, vie
     <div className="relative inline-block align-self-center justify-self-end">
       <button
         onClick={handleDropDown}
-        className="py-2 px-4 text-gray-600 text-xl hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
+        className="px-4 text-gray-600 text-xl hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
       >
         <svg className="ml-2 w-6 h-6 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#ChevronDown"/>

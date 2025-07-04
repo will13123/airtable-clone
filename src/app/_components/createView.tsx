@@ -23,9 +23,9 @@ export default function CreateTable({ tableId }: { tableId: string }) {
       <div className="relative inline-block">
         <button
           onClick={handleDropDown}
-          className="p-3 text-base cursor-pointer pr-10 rounded-sm hover:bg-gray-100 bg-white"
+          className="p-3 text-sm cursor-pointer pr-10 rounded-sm hover:bg-gray-100 bg-white"
         >
-          Create View
+          Create new...
           {/* <svg className="ml-2 w-6 h-6 fill-current inline-block" viewBox="0 0 22 22">
             <use href="/icon_definitions.svg#Plus" />
           </svg> */}

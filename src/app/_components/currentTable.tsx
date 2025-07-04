@@ -10,7 +10,6 @@ import FilterButton from "./filterButton";
 
 export default function CurrentTable({ tableId }: { tableId: string }) {
   const utils = api.useUtils();
-  const { data: name } = api.table.getNameFromId.useQuery({ tableId: tableId });
   const { data: views } = api.table.getViews.useQuery({ tableId });
   const { data: currViewId } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
@@ -21,14 +20,20 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     },
   });
   
+  const currView = views?.find(v => v.id === currViewId);
+  let name = currView?.name;
   const [currentViewIdState, setCurrentViewIdState] = useState<string>(currViewId ?? "");
+  const [currentViewName, setCurrentViewName] = useState(name);
+
 
   useEffect(() => {
       if (views && earliestView && currViewId === "") {
         void setCurrView.mutate({ tableId, viewId: earliestView.id });
         setCurrentViewIdState(earliestView.id);
+        setCurrentViewName("Default View");
       } else {
         setCurrentViewIdState(currentViewIdState);
+        setCurrentViewName(name);
       }
     }, [views, currViewId, currentViewIdState, earliestView]);
 
@@ -37,27 +42,27 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
       {/* Top bar for table */}
       <header className="flex justify-center items-center bg-white border-b-1 border-solid border-neutral-300 p-1 pr-5">
         <div className="flex flex-1 justify-start items-center gap-2">
-          <p className="text-lg font-bold">Name: {name}</p>
+          <p className="text-sm font-semibold">{currentViewName}</p>
         </div>
         <div className="flex-1"></div>
         <div className="flex flex-row justify-between items-center flex-1">
-          <p className="text-neutral-600 text-lg">Hide Fields</p>
+          <p className="text-neutral-600 text-sm">Hide Fields</p>
           <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
           <SortButton viewId={currViewId ?? ""}/>
-          <p className="text-neutral-600 text-lg">Search</p>
+          <p className="text-neutral-600 text-sm">Search</p>
         </div>
       </header>
       {/*Main Box*/}
       <div className="flex">
         {/* Sidebar */}
-        <div className=" text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-2">
-          <div className="p-2 gap-4 flex flex-col">
+        <div className=" text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-1">
+          <div className="p-2 flex flex-col">
             <CreateView tableId={tableId}/>
             
             {views?.map((view) => (
               <button
                 key={view.id}
-                className={`p-3 text-base cursor-pointer pr-10 text-left ${
+                className={`p-3 text-sm cursor-pointer pr-10 text-left ${
                   currViewId === view.id
                     ? 'bg-gray-100'
                     : 'hover:bg-gray-100 bg-white'
@@ -65,6 +70,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                 onClick={() => {
                   void setCurrView.mutate({ tableId, viewId: view.id });
                   setCurrentViewIdState(view.id);
+                  setCurrentViewName(view.name);
+                  name = view.name;
                 }}
               >
                 {view.name}
