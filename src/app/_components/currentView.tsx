@@ -26,7 +26,15 @@ type CellType = {
 
 const columnHelper = createColumnHelper<RowType>();
 
-export default function CurrentTable({ viewId, tableId }: { viewId: string, tableId: string }) {
+export default function CurrentView({ 
+  viewId, 
+  tableId, 
+  hiddenColumns = [] 
+}: { 
+  viewId: string, 
+  tableId: string,
+  hiddenColumns?: string[]
+}) {
   const utils = api.useUtils();
   const { data, isLoading: rowsLoading } = api.view.getViewRows.useQuery({ viewId });
   const { data: sorts } = api.view.getSorts.useQuery({ viewId });
@@ -52,6 +60,9 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
 
   const rows = data?.rows ?? [];
   const columns = data?.columns ?? [];
+
+  // Filter out hidden columns
+  const visibleColumns = columns.filter(column => !hiddenColumns.includes(column.id));
 
   const sortColumnIds = sorts
     ? sorts.map((sort) => {
@@ -138,7 +149,10 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
       const row = info.row.original;
       const column = info.column.columnDef;
       const cell = row.cells.find((c) => c.columnId === column.id);
-      const isFirstColumn = info.column.getIndex() === 0;
+      
+      // Calculate isFirstColumn based on visible columns only
+      const visibleColumnIds = visibleColumns.map(col => col.id);
+      const isFirstColumn = visibleColumnIds.indexOf(column.id!) === 0;
       const rowNumber = info.row.index + 1;
       
       return (
@@ -155,7 +169,8 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
 
   const tableColumns = React.useMemo(
     () => [
-      ...columns.map((column) =>
+      // Only include visible columns
+      ...visibleColumns.map((column) =>
         columnHelper.accessor(
           (row) => {
             const cell = row.cells.find((cell) => cell.columnId === column.id);
@@ -170,7 +185,7 @@ export default function CurrentTable({ viewId, tableId }: { viewId: string, tabl
         )
       ),
     ],
-    [columns]
+    [visibleColumns]
   );
 
   const handleCreateRow = () => {

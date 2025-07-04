@@ -6,13 +6,14 @@ import CurrentView from "./currentView";
 import { useState, useEffect } from "react";
 import SortButton from "./sortButton";
 import FilterButton from "./filterButton";
-
+import HideButton from "./hideButton";
 
 export default function CurrentTable({ tableId }: { tableId: string }) {
   const utils = api.useUtils();
   const { data: views } = api.table.getViews.useQuery({ tableId });
   const { data: currViewId } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
+  const { data: tableColumns } = api.table.getColumns.useQuery({ tableId });
 
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
@@ -24,7 +25,18 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   let name = currView?.name;
   const [currentViewIdState, setCurrentViewIdState] = useState<string>(currViewId ?? "");
   const [currentViewName, setCurrentViewName] = useState(name);
+  
+  // State for hidden columns
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
 
+  // Function to toggle column visibility
+  const handleToggleColumn = (columnId: string) => {
+    setHiddenColumns(prev => 
+      prev.includes(columnId) 
+        ? prev.filter(id => id !== columnId)
+        : [...prev, columnId]
+    );
+  };
 
   useEffect(() => {
       if (views && earliestView && currViewId === "") {
@@ -46,7 +58,11 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         </div>
         <div className="flex-1"></div>
         <div className="flex flex-row justify-between items-center flex-1">
-          <p className="text-neutral-600 text-sm">Hide Fields</p>
+          <HideButton 
+            columns={tableColumns ?? []} 
+            hiddenColumns={hiddenColumns}
+            onToggleColumn={handleToggleColumn}
+          />
           <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
           <SortButton viewId={currViewId ?? ""}/>
           <p className="text-neutral-600 text-sm">Search</p>
@@ -82,7 +98,13 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           </div>            
         </div>
         {/* Main Table */}
-        {currViewId && <CurrentView viewId={currViewId} tableId={tableId}/>}
+        {currViewId && (
+          <CurrentView 
+            viewId={currViewId} 
+            tableId={tableId}
+            hiddenColumns={hiddenColumns}
+          />
+        )}
         
       </div>
       
