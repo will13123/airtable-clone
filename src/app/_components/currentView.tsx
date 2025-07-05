@@ -23,15 +23,13 @@ type CellType = {
   columnId: string;
   type: string;
 }
-type ColumnType = {
-  tableId: string;
-  type: string;
-  name: string;
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  order: number;
-}
+type ColumnType = { 
+  type: string; 
+  name: string; 
+  id: string; 
+  createdAt: Date; 
+  updatedAt: Date; 
+  tableId: string; }
 
 const columnHelper = createColumnHelper<RowType>();
 
