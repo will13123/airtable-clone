@@ -9,19 +9,16 @@ export default function EditColumn({ columnId, viewId }: { columnId: string, vie
   const { data: type } = api.column.getType.useQuery({ columnId });
   const updateSort = api.view.updateSort.useMutation({
     onSuccess: () => {
-      void utils.view.getViewRows.invalidate({ viewId });
       void utils.view.getSorts.invalidate({ viewId });
     },
   });
   const removeSort = api.view.removeSort.useMutation({
     onSuccess: () => {
-      void utils.view.getViewRows.invalidate({ viewId });
       void utils.view.getSorts.invalidate({ viewId });
     },
   });
   const removeFilter = api.view.removeFilter.useMutation({
     onSuccess: () => {
-      void utils.view.getViewRows.invalidate({ viewId });
       void utils.view.getFilters.invalidate({ viewId });
     },
   });

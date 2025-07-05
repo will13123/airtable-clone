@@ -23,25 +23,6 @@ export const tableRouter = createTRPCRouter({
       return table;
     }),
 
-    // implement cursor pagination
-  getRows: protectedProcedure
-    .input(z.object({ tableId: z.string() }))
-    .query(async ({ input }) => {
-      const table = await db.table.findUnique({
-        where: { id: input.tableId },
-        include:{ rows: { include: { cells: true } }, columns: true },
-      });
-      if (!table) return null
-      const rows = table.rows.map((row) => ({
-        id: row.id,
-        cells: table.columns.map((column) => {
-          const cell = row.cells.find((c) => c.columnId === column.id);
-          return { columnId: column.id, type: column.type, value: cell?.value ?? "", cellId: cell?.id };
-        }),
-      }));
-      return { rows, columns: table.columns };
-    }),
-
   getNameFromId: protectedProcedure
     .input(z.object({ tableId: z.string() }))
     .query(async ({ input }) => {
@@ -111,7 +92,6 @@ export const tableRouter = createTRPCRouter({
         where: { id: input.tableId },
       });
       if (!table) return "";
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return table.currView;
     }),
 

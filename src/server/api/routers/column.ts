@@ -1,17 +1,8 @@
-import type { View } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { faker } from "@faker-js/faker";
 
-
-export const randomString = () => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  let result = "";
-  for (let i = 0; i < 5; i++) {
-    result += characters[Math.floor(Math.random() * characters.length)];
-  }
-  return result;
-}
 
 export const columnRouter = createTRPCRouter({
   create: protectedProcedure
@@ -24,21 +15,6 @@ export const columnRouter = createTRPCRouter({
           name: input.name,
         },
       });
-
-      // const table = await db.table.findUnique({
-      //   where: { id: input.tableId },
-      //   include: { base: true, rows: true }, 
-      // });
-      // if (!table) return null;
-      // const cells = table.rows.map((row) => ({
-      //   tableId: input.tableId,
-      //   columnId: col.id,
-      //   rowId: row.id,
-      //   value: (input.type === "number") ? Math.floor(Math.random() * 1000).toString() : randomString(), 
-      // }));
-      // await db.cell.createMany({
-      //   data: cells,
-      // });
 
       // Process rows using cursor-based pagination
       const batchSize = 10000; 
@@ -60,7 +36,8 @@ export const columnRouter = createTRPCRouter({
           tableId: input.tableId,
           columnId: col.id,
           rowId: row.id,
-          value: input.type === "number" ? Math.floor(Math.random() * 1000).toString() : randomString(),
+          value: input.type === "number" ? faker.number.int({ min: 1, max: 10000 }).toString() : faker.lorem.words(3)
+,
         }));
 
         await db.cell.createMany({

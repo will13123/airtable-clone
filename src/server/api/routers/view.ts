@@ -48,8 +48,8 @@ export const viewRouter = createTRPCRouter({
   .input(
     z.object({
       viewId: z.string(),
-      // cursor: z.string().optional(), // Cursor for pagination 
-      // limit: z.number().min(1).max(10000).default(100), // Limit per page
+      cursor: z.string().optional(), // Cursor for pagination 
+      limit: z.number(), // Limit per page
     })
   )
   .query(async ({ input }) => {
@@ -148,9 +148,8 @@ export const viewRouter = createTRPCRouter({
       return `${valueExpression} ${sort.direction.toUpperCase()} NULLS LAST`;
     });
 
-    // Add default ordering
-    orderByClauses.push('r."createdAt" ASC');
-
+    // Add default ordering for consistent pagination
+    orderByClauses.push('r."id" ASC');
 
     const baseWhereClause = `r."tableId" = '${tableId}'`;
     const allWhereClauses = [baseWhereClause];
@@ -159,28 +158,41 @@ export const viewRouter = createTRPCRouter({
       allWhereClauses.push(...filterWhereClauses);
     }
 
+    // Add cursor-based pagination to where clause
+    if (input.cursor) {
+      allWhereClauses.push(`r."id" > '${input.cursor}'`);
+    }
+
     const combinedWhereClause = allWhereClauses.join(' AND ');
 
+    // Modified sort query with pagination
     const sortQuery = `
-      SELECT r."id" 
+      SELECT r."id"
       FROM "Row" AS r 
       ${allJoins} 
       WHERE ${combinedWhereClause} 
       ORDER BY ${orderByClauses.join(", ")}
+      LIMIT ${input.limit + 1}
     `;
 
     const sortedRowIds: { id: string }[] = await db.$queryRawUnsafe(sortQuery);
 
-    if (!sortedRowIds.length) {
+    // Determine if there are more results
+    const hasNextPage = sortedRowIds.length > input.limit;
+    const rowsToReturn = hasNextPage ? sortedRowIds.slice(0, input.limit) : sortedRowIds;
+    const nextCursor = hasNextPage ? rowsToReturn[rowsToReturn.length - 1]?.id : null;
+
+    if (!rowsToReturn.length) {
       return {
         columns,
         rows: [],
-        // nextCursor: null,
+        nextCursor: null,
       };
     }
 
-    const rowIds = sortedRowIds.map(row => `'${row.id}'`).join(',');
+    const rowIds = rowsToReturn.map(row => `'${row.id}'`).join(',');
     
+    // Modified data query to maintain the sorted order with pagination
     const dataQuery = `
       SELECT 
         r.id,
@@ -201,13 +213,22 @@ export const viewRouter = createTRPCRouter({
       GROUP BY r.id
     `;
 
-    const rawRows: { id: string; cells: { cellId: string; tableId: string; columnId: string; rowId: string; value: string; type: string }[] }[] =
-      await db.$queryRawUnsafe(dataQuery);
+    const rawRows: { 
+      id: string; 
+      cells: { 
+        cellId: string; 
+        tableId: string; 
+        columnId: string; 
+        rowId: string; 
+        value: string; 
+        type: string 
+      }[] 
+    }[] = await db.$queryRawUnsafe(dataQuery);
 
-    // Make the correct response type
+    // Create a map for efficient lookup
     const rowsMap = new Map(rawRows.map(row => [row.id, row]));
     
-    const rows: RowResponse[] = sortedRowIds.map(({ id }) => {
+    const rows: RowResponse[] = rowsToReturn.map(({ id }) => {
       const rowData = rowsMap.get(id);
       return {
         id,
@@ -223,7 +244,7 @@ export const viewRouter = createTRPCRouter({
     return {
       columns,
       rows,
-      // nextCursor,
+      nextCursor,
     };
   }),
 
