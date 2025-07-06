@@ -12,6 +12,24 @@ type RowResponse = {
   }[];
 };
 
+// Cursor type that includes values for sorting
+type CursorData = {
+  id: string;
+  sortValues: Record<string, string | null>; // columnId and value
+};
+
+function encodeCursor(cursorData: CursorData): string {
+  return Buffer.from(JSON.stringify(cursorData)).toString('base64');
+}
+
+function decodeCursor(cursor: string): CursorData | null {
+  try {
+    const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
+    return JSON.parse(decoded) as CursorData;
+  } catch {
+    return null;
+  }
+}
 
 export const viewRouter = createTRPCRouter({
   getVisibleColumns: protectedProcedure
@@ -57,25 +75,29 @@ export const viewRouter = createTRPCRouter({
       where: { id: input.viewId },
     });
     
-    if (!view?.sort) return null;
 
-    const tableId = view.tableId;
+    const tableId = view?.tableId;
 
-    const sortOrders = view.sort.map((sort) => {
+    let sortOrders = view?.sort.map((sort) => {
       const [columnId, direction] = sort.split(":") as [string, "asc" | "desc"];
       return { columnId, direction };
     });
 
-    const filterOrders = (view.filters).map((filter) => {
+    let filterOrders = view?.filters.map((filter) => {
       const [columnId, operator, value] = filter.split(":");
       return { columnId, operator, value };
     });
+
+    filterOrders ??= [];
+    sortOrders ??= [];
 
     const columns = await db.column.findMany({
      where: { tableId },
     });
 
     if (!columns.length) return null;
+
+    const cursorData = input.cursor ? decodeCursor(input.cursor) : null;
 
     // Get all unique column IDs that need joins (from both sorting and filtering)
     const allColumnIds = new Set([
@@ -158,16 +180,95 @@ export const viewRouter = createTRPCRouter({
       allWhereClauses.push(...filterWhereClauses);
     }
 
-    // Add cursor-based pagination to where clause
-    if (input.cursor) {
-      allWhereClauses.push(`r."id" > '${input.cursor}'`);
+    // Build conditions for cursors and sorts
+    if (cursorData) {
+      const cursorConditions: string[] = [];
+      
+      // Build conditions for each sort level
+      for (let i = 0; i < sortOrders.length; i++) {
+        const sort = sortOrders[i];
+        if (!sort) continue;
+        const alias = columnAliasMap.get(sort.columnId);
+        const column = columns.find(col => col.id === sort.columnId);
+        const isNumber = column?.type === "number";
+        const cursorValue = cursorData.sortValues[sort.columnId];
+        
+        if (cursorValue !== undefined) {
+          const valueExpression = isNumber ? `CAST(${alias}.value AS FLOAT)` : `LOWER(${alias}.value)`;
+          const cursorValueExpression = isNumber ? parseFloat(cursorValue ?? "0") : `LOWER('${cursorValue ?? ""}')`;
+          
+          const operator = sort.direction === "asc" ? ">" : "<";
+          
+          // Build condition: (col1 > cursor_val1) OR (col1 = cursor_val1 AND col2 > cursor_val2) OR ...
+          const equalityConditions: string[] = [];
+          
+          // Add equality conditions for all previous sort levels
+          for (let j = 0; j < i; j++) {
+            const prevSort = sortOrders[j];
+            if (!prevSort) continue;
+            const prevAlias = columnAliasMap.get(prevSort.columnId);
+            const prevColumn = columns.find(col => col.id === prevSort.columnId);
+            const prevIsNumber = prevColumn?.type === "number";
+            const prevCursorValue = cursorData.sortValues[prevSort.columnId];
+            
+            if (prevCursorValue !== undefined) {
+              const prevValueExpression = prevIsNumber ? `CAST(${prevAlias}.value AS FLOAT)` : `LOWER(${prevAlias}.value)`;
+              const prevCursorValueExpression = prevIsNumber ? parseFloat(prevCursorValue ?? "0") : `LOWER('${prevCursorValue ?? ""}')`;
+              equalityConditions.push(`${prevValueExpression} = ${prevCursorValueExpression}`);
+            }
+          }
+          
+          // Current level condition
+          const currentCondition = `${valueExpression} ${operator} ${cursorValueExpression}`;
+          
+          if (equalityConditions.length > 0) {
+            cursorConditions.push(`(${equalityConditions.join(" AND ")} AND ${currentCondition})`);
+          } else {
+            cursorConditions.push(`(${currentCondition})`);
+          }
+        } 
+      }
+      
+      // Add final condition for ID (tie-breaker)
+      const equalityConditions: string[] = [];
+      for (const sort of sortOrders) {
+        const alias = columnAliasMap.get(sort.columnId);
+        const column = columns.find(col => col.id === sort.columnId);
+        const isNumber = column?.type === "number";
+        const cursorValue = cursorData.sortValues[sort.columnId];
+        
+        if (cursorValue !== undefined) {
+          const valueExpression = isNumber ? `CAST(${alias}.value AS FLOAT)` : `LOWER(${alias}.value)`;
+          const cursorValueExpression = isNumber ? parseFloat(cursorValue ?? "0") : `LOWER('${cursorValue ?? ""}')`;
+          equalityConditions.push(`${valueExpression} = ${cursorValueExpression}`);
+        }
+      }
+      
+      if (equalityConditions.length > 0) {
+        cursorConditions.push(`(${equalityConditions.join(" AND ")} AND r."id" > '${cursorData.id}')`);
+      }
+      
+      if (cursorConditions.length > 0) {
+        allWhereClauses.push(`(${cursorConditions.join(" OR ")})`);
+      } else {
+        allWhereClauses.push(`r."id" > '${cursorData.id}'`);
+      }
     }
 
     const combinedWhereClause = allWhereClauses.join(' AND ');
 
-    // Modified sort query with pagination
+    // Enhanced sort query that also selects the sort values for cursor creation
+    const sortValueSelects = sortOrders.map((sort) => {
+      const alias = columnAliasMap.get(sort.columnId);
+      return `${alias}.value as sort_${sort.columnId}`;
+    });
+
+    const selectClause = sortValueSelects.length > 0 
+      ? `r."id", ${sortValueSelects.join(', ')}`
+      : `r."id"`;
+
     const sortQuery = `
-      SELECT r."id"
+      SELECT ${selectClause}
       FROM "Row" AS r 
       ${allJoins} 
       WHERE ${combinedWhereClause} 
@@ -175,12 +276,29 @@ export const viewRouter = createTRPCRouter({
       LIMIT ${input.limit + 1}
     `;
 
-    const sortedRowIds: { id: string }[] = await db.$queryRawUnsafe(sortQuery);
+    const sortedRowIds: ({ id: string } & Record<string, string | null>)[] = await db.$queryRawUnsafe(sortQuery);
 
     // Determine if there are more results
     const hasNextPage = sortedRowIds.length > input.limit;
     const rowsToReturn = hasNextPage ? sortedRowIds.slice(0, input.limit) : sortedRowIds;
-    const nextCursor = hasNextPage ? rowsToReturn[rowsToReturn.length - 1]?.id : null;
+    
+    // Create enhanced cursor with sort values
+    let nextCursor: string | null = null;
+    if (hasNextPage && rowsToReturn.length > 0) {
+      const lastRow = rowsToReturn[rowsToReturn.length - 1];
+      const sortValues: Record<string, string | null> = {};
+      
+      sortOrders.forEach((sort) => {
+        sortValues[sort.columnId] = lastRow ? lastRow[`sort_${sort.columnId}`] ?? null : null;
+      });
+      
+      const cursorData: CursorData = {
+        id: lastRow ? lastRow.id : "",
+        sortValues
+      };
+      
+      nextCursor = encodeCursor(cursorData);
+    }
 
     if (!rowsToReturn.length) {
       return {
@@ -248,6 +366,7 @@ export const viewRouter = createTRPCRouter({
     };
   }),
 
+  // ... rest of your methods remain the same
   updateSort: protectedProcedure
     .input(
       z.object({

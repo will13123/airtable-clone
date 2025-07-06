@@ -5,11 +5,11 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  type ColumnDef,
 } from "@tanstack/react-table";
 import { api } from "~/trpc/react";
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import EditColumn from "./editColumn";
 
 type RowType = { 
@@ -23,117 +23,190 @@ type CellType = {
   columnId: string;
   type: string;
 }
-type ColumnType = { 
-  type: string; 
-  name: string; 
-  id: string; 
-  createdAt: Date; 
-  updatedAt: Date; 
-  tableId: string; }
+
+// type ColumnType = { 
+//   type: string; 
+//   name: string; 
+//   id: string; 
+//   createdAt: Date; 
+//   updatedAt: Date; 
+//   tableId: string; 
+// }
+
+type MatchingCell = {
+  id: string;
+  value: string;
+  columnId: string;
+  rowId: string;
+}
+
+type SearchMatch = {
+  cellId: string;
+  rowIndex: number;
+  columnId: string;
+  value: string;
+}
 
 const columnHelper = createColumnHelper<RowType>();
+
+// Configuration
+const PAGE_SIZE = 1000;
+const PREFETCH_THRESHOLD = 2000;
 
 export default function CurrentView({ 
   viewId, 
   tableId, 
-  hiddenColumns = [],
-  searchTerm = ""
+  hiddenColumns,
+  searchTerm,
+  currentMatchIndex,
+  matchingCells,
+  setNumMatchingCells
 }: { 
   viewId: string, 
   tableId: string,
-  hiddenColumns?: string[],
-  searchTerm?: string
+  hiddenColumns: string[],
+  searchTerm: string,
+  currentMatchIndex: number,
+  matchingCells: MatchingCell[],
+  setNumMatchingCells: (value: number) => void
 }) {
   const utils = api.useUtils();
   
-  const [allRows, setAllRows] = useState<RowType[]>([]);
   const [allColumns, setAllColumns] = useState<Array<{id: string; name: string; type: string}>>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch all data using while loop
-  const fetchAllData = useCallback(async () => {
-    if (!viewId) return;
-    
-    setIsLoading(true);
-    const allRowsData: RowType[] = [];
-    let allColumnsData: ColumnType[] = [];
-    let cursor: string | undefined = undefined;
-    
-    while (true) {
-      const page = await utils.view.getViewRows.fetch({
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
+  const queryClient = useQueryClient();
+  
+  // Use ref to store the setter to avoid adding it to useEffect dependencies
+  const setNumMatchingCellsRef = useRef(setNumMatchingCells);
+  
+  // Update ref when prop changes
+  useEffect(() => {
+    setNumMatchingCellsRef.current = setNumMatchingCells;
+  }, [setNumMatchingCells]);
+  
+  // Infinite query for cursor-based pagination
+  const {
+    data: paginatedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['viewRows', viewId],
+    queryFn: async ({ pageParam }) => {
+      const result = await utils.view.getViewRows.fetch({
         viewId,
-        cursor,
-        limit: 10000
+        cursor: pageParam,
+        limit: PAGE_SIZE
       });
       
-      if (!page?.rows || page.rows.length === 0) break;
-      
-      allRowsData.push(...page.rows);
-      
-      if (allColumnsData.length === 0 && page.columns) {
-        allColumnsData = page.columns;
+      // Set columns on first fetch
+      if (!hasInitialized && result?.columns) {
+        setAllColumns(result.columns);
+        setHasInitialized(true);
       }
-      if (!page.nextCursor) {
-        break;
-      } else {
-        cursor = page.nextCursor;
-      }
-    }
-    
-    setAllRows(allRowsData);
-    setAllColumns(allColumnsData);
-    setIsLoading(false);
-  }, [viewId, utils.view.getViewRows]);
+      
+      return result;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
+    enabled: true,
+  });
+
+  // Flatten all rows from pages
+  const allRows = useMemo(() => {
+    return paginatedData?.pages.flatMap(page => page?.rows ?? []) ?? [];
+  }, [paginatedData]);
+
+  const totalRows = allRows.length;
 
   const { data: sorts } = api.view.getSorts.useQuery({ viewId });
   const { data: filters } = api.view.getFilters.useQuery({ viewId });
 
-  // Get matching cells for highlighting
-  const { data: matchingCells } = api.view.searchCells.useQuery(
-    { viewId, searchTerm },
-    { enabled: !!searchTerm.trim() }
-  );
-
-  // Trigger fetch on viewId, sorts, filters or search params change
-  useEffect(() => {
-    void fetchAllData();
-  }, [fetchAllData, viewId, sorts, filters, matchingCells]);
-
-
-  const createRow = api.row.create.useMutation({
-    onSuccess: () => fetchAllData(),
-  });
-  const createColumn = api.column.create.useMutation({
-    onSuccess: () => {
-      void fetchAllData();
-      void utils.table.getColumns.invalidate({ tableId })
-    }
-  });
-  const createManyRows = api.row.createMany.useMutation({
-    onSuccess: () => fetchAllData(),
-  })
-  const updateCell = api.table.updateCell.useMutation({
-    onSuccess: () => fetchAllData(),
-  });
-  const [columnDropdownIsOpen, setColumnDropdownIsOpen] = useState(false);
-  const handleColumnDropdown = useCallback(() => {
-    setColumnDropdownIsOpen(!columnDropdownIsOpen);
-  }, [columnDropdownIsOpen]);
-  const [type, setType] = useState("");
-  const [columnName, setColumnName] = useState("");
-
-  // Use batch fetched data
-  const rows = useMemo(() => allRows, [allRows]);
-  const columns = useMemo(() => allColumns, [allColumns]);
-
-  const visibleColumns = useMemo(() => 
-    columns.filter(column => !hiddenColumns.includes(column.id)),
-    [columns, hiddenColumns]
-  );
-
+  // Create a set of matching cell IDs for O(1) lookup
   const matchingCellIds = useMemo(() => 
     new Set(matchingCells?.map(cell => cell.id) ?? []),
     [matchingCells]
+  );
+
+  // Build search index whenever rows or search results change
+  useEffect(() => {
+    if (!matchingCells.length || !allRows.length) {
+      setSearchMatches([]);
+      setNumMatchingCellsRef.current(0);
+      return;
+    }
+
+    const matches: SearchMatch[] = [];
+    
+    // Iterate through rows and check each cell
+    allRows.forEach((row, rowIndex) => {
+      row.cells.forEach((cell) => {
+        if (cell.cellId && matchingCellIds.has(cell.cellId)) {
+          matches.push({
+            cellId: cell.cellId,
+            rowIndex,
+            columnId: cell.columnId,
+            value: cell.value
+          });
+        }
+      });
+    });
+
+    setSearchMatches(matches);
+    setNumMatchingCellsRef.current(matches.length);
+  }, [allRows, matchingCells, matchingCellIds]); // Don't include setNumMatchingCells
+
+  // Refetch when dependencies change
+  useEffect(() => {
+    if (viewId) {
+      setHasInitialized(false);
+      void refetch();
+      void queryClient.invalidateQueries({ 
+        queryKey: ['viewRows', viewId] 
+      })
+    }
+  }, [viewId, JSON.stringify(sorts), JSON.stringify(filters), refetch]);
+
+  // Mutations
+  const createRow = api.row.create.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+  });
+  
+  const createColumn = api.column.create.useMutation({
+    onSuccess: () => {
+      void refetch();
+      void utils.table.getColumns.invalidate({ tableId });
+    }
+  });
+  
+  const createManyRows = api.row.createMany.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+  });
+  
+  const updateCell = api.table.updateCell.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+  });
+
+  const [columnDropdownIsOpen, setColumnDropdownIsOpen] = useState(false);
+  const [type, setType] = useState("");
+  const [columnName, setColumnName] = useState("");
+
+  const handleColumnDropdown = useCallback(() => {
+    setColumnDropdownIsOpen(!columnDropdownIsOpen);
+  }, [columnDropdownIsOpen]);
+
+  const visibleColumns = useMemo(() => 
+    allColumns.filter(column => !hiddenColumns.includes(column.id)),
+    [allColumns, hiddenColumns]
   );
 
   const sortColumnIds = useMemo(() => 
@@ -146,30 +219,61 @@ export default function CurrentView({
     [filters]
   );
 
-  // Tanstack Virtualisation
+  // Tanstack Virtualization
   const scrollRef = useRef<HTMLTableSectionElement>(null);
   const virtualizer = useVirtualizer({
-    count: rows.length,
+    count: totalRows,
     estimateSize: () => 45,
     getScrollElement: () => scrollRef.current,
-    overscan: 15,
+    overscan: 100,
     horizontal: false,
     measureElement: () => 45,
   });
 
   const virtualRows = virtualizer.getVirtualItems();
 
-  // Editable Cell component to use react hooks
+  // Fetch more data when approaching the end of scroll
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const lastVirtualRow = virtualRows[virtualRows.length - 1];
+    if (lastVirtualRow && lastVirtualRow.index >= totalRows - PREFETCH_THRESHOLD) {
+      void fetchNextPage();
+    }
+  }, [virtualRows, totalRows, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Scroll to current match when it changes
+  useEffect(() => {
+    if (searchMatches.length > 0 && currentMatchIndex >= 0 && currentMatchIndex < searchMatches.length) {
+      const currentMatch = searchMatches[currentMatchIndex];
+      if (currentMatch) {
+        virtualizer.scrollToIndex(currentMatch.rowIndex, {
+          align: 'center',
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [currentMatchIndex, searchMatches, virtualizer]);
+
+  // Editable Cell component
   const EditableCell = React.memo(({
     initialValue,
     cell,
     rowNumber,
     isFirstColumn = false,
+    isHighlighted,
+    isCurrentMatch,
+    sortColumnIds,
+    filterColumnIds,
   }: {
     initialValue: string;
     cell: CellType;
     rowNumber?: number;
     isFirstColumn?: boolean;
+    isHighlighted?: boolean;
+    isCurrentMatch?: boolean;
+    sortColumnIds?: string[];
+    filterColumnIds?: string[];    
   }) => {
     const [value, setValue] = useState(initialValue);
     const [originalValue, setOriginalValue] = useState(initialValue);
@@ -180,12 +284,11 @@ export default function CurrentView({
 
     useEffect(() => {
       setValue(initialValue);
+      setOriginalValue(initialValue);
     }, [initialValue]);
 
-    const isHighlighted = matchingCellIds.has(cell.cellId ?? "");
-
     const handleBlur = useCallback(() => {
-      if (cell.cellId && cell.value !== value) {
+      if (cell.cellId && originalValue !== value) {
         if (regex.test(value)) {
           updateCell.mutate({
             cellId: cell.cellId,
@@ -197,7 +300,7 @@ export default function CurrentView({
           setValue(originalValue);
         }
       }
-    }, [cell.cellId, cell.value, cell.type, value, regex, originalValue, updateCell]);
+    }, [cell.cellId, cell.type, value, regex, originalValue, updateCell]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
@@ -212,10 +315,11 @@ export default function CurrentView({
         )}
         <input
           className={`w-full h-full p-2 border-0 text-right text-sm rounded-none ${
-            sortColumnIds.includes(cell.columnId) ? "bg-orange-100" : ""
+            sortColumnIds?.includes(cell.columnId) ? "bg-orange-100" : ""
           } ${
-            filterColumnIds.includes(cell.columnId) ? "bg-green-100" : ""
+            filterColumnIds?.includes(cell.columnId) ? "bg-green-100" : ""
           } ${
+            isCurrentMatch ? "bg-yellow-300" : 
             isHighlighted ? "bg-yellow-200" : ""
           }`}
           value={value}
@@ -225,33 +329,7 @@ export default function CurrentView({
       </div>
     );
   });
-
   EditableCell.displayName = 'EditableCell';
-
-  // Default column info
-  const defaultColumn: Partial<ColumnDef<RowType>> = useMemo(() => ({
-    cell: (info) => {
-      const initialValue = info.getValue() as string;
-      const row = info.row.original;
-      const column = info.column.columnDef;
-      const cell = row.cells.find((c) => c.columnId === column.id);
-      
-      // Calculate isFirstColumn based on visible columns only
-      const visibleColumnIds = visibleColumns.map(col => col.id);
-      const isFirstColumn = visibleColumnIds.indexOf(column.id!) === 0;
-      const rowNumber = info.row.index + 1;
-      
-      return (
-        <EditableCell
-          initialValue={initialValue}
-          cell={cell ?? { cellId: "", value: "", columnId: "", type: ""}}
-          rowNumber={rowNumber}
-          isFirstColumn={isFirstColumn}
-        />
-      );
-    },
-    size: 200,
-  }), [visibleColumns]);
 
   const tableColumns = useMemo(
     () => [
@@ -265,12 +343,40 @@ export default function CurrentView({
             id: column.id,
             header: `${column.name}`,
             meta: { type: column.type },
-            size: 200
+            size: 200,
+            cell: (info) => {
+              const initialValue = info.getValue();
+              const row = info.row.original;
+              const column = info.column.columnDef;
+              const cell = row.cells.find((c) => c.columnId === column.id);
+              
+              const visibleColumnIds = visibleColumns.map(col => col.id);
+              const isFirstColumn = visibleColumnIds.indexOf(column.id!) === 0;
+              const rowNumber = info.row.index + 1;
+              const isHighlighted = matchingCellIds.has(cell?.cellId ?? "");
+              
+              // Check if this is the current match using our search index
+              const currentMatch = searchMatches[currentMatchIndex];
+              const isCurrentMatch = currentMatch?.cellId === cell?.cellId;
+              
+              return (
+                <EditableCell
+                  initialValue={initialValue}
+                  cell={cell ?? { cellId: "", value: "", columnId: "", type: ""}}
+                  rowNumber={rowNumber}
+                  isFirstColumn={isFirstColumn}
+                  isHighlighted={isHighlighted}
+                  isCurrentMatch={isCurrentMatch}
+                  sortColumnIds={sortColumnIds} 
+                  filterColumnIds={filterColumnIds}
+                />
+              );
+            },
           }
         )
       ),
     ],
-    [visibleColumns]
+    [visibleColumns, matchingCellIds, searchMatches, currentMatchIndex, sortColumnIds, filterColumnIds]
   );
 
   const handleCreateRow = useCallback(() => {
@@ -281,16 +387,15 @@ export default function CurrentView({
     createManyRows.mutate({ tableId });
   }, [createManyRows, tableId]);
 
-  // Memoize table instance
+  // Table Creation
   const table = useReactTable({
-    data: rows,
+    data: allRows,
     columns: tableColumns,
-    defaultColumn,
     getCoreRowModel: getCoreRowModel(),
     enableColumnResizing: false,
   });
 
-  // Memoize form handlers
+  // Creating column
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     setColumnDropdownIsOpen(false);
@@ -339,7 +444,7 @@ export default function CurrentView({
                       <div className="inline-block">
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
-                      <EditColumn columnId={header.column.id} viewId={viewId}/>
+                      <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={() => refetch()}/>
                     </th>
                   ))}
                 </tr>
@@ -453,7 +558,7 @@ export default function CurrentView({
           </button>
         </div>
       </div>
-      {rows.length === 0 && <p className="mt-2 text-center">No rows available</p>}
+      {totalRows === 0 && !isLoading && <p className="mt-2 text-center">No rows available</p>}
     </div>
   );
 }

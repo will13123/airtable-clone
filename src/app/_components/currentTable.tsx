@@ -3,7 +3,7 @@
 import { api } from "~/trpc/react";
 import CreateView from "./createView";
 import CurrentView from "./currentView";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SortButton from "./sortButton";
 import FilterButton from "./filterButton";
 import HideButton from "./hideButton";
@@ -26,14 +26,27 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   let name = currView?.name;
   const [currentViewIdState, setCurrentViewIdState] = useState<string>(currViewId ?? "");
   const [currentViewName, setCurrentViewName] = useState(name);
-  
-  // State for hidden columns
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
-  
-  // State for search
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [numSearchResults, setNumSearchResults] = useState(0);
 
-  // Function to toggle column visibility
+  // Simple search for matching cells
+  const { data: matchingCells } = api.view.searchCells.useQuery(
+    { viewId: currViewId ?? "", searchTerm },
+    { enabled: !!searchTerm.trim() && !!currViewId }
+  );
+
+  // Pass in num of search results
+  const handleSetNumSearchResults = useCallback((value: number) => {
+    setNumSearchResults(value);
+  }, []);
+
+  // Reset current match index when search results change
+  useEffect(() => {
+    setCurrentMatchIndex(0);
+  }, [matchingCells]);
+
   const handleToggleColumn = (columnId: string) => {
     setHiddenColumns(prev => 
       prev.includes(columnId) 
@@ -42,9 +55,12 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     );
   };
 
-  // Function to handle search
   const handleSearch = (search: string) => {
     setSearchTerm(search);
+  };
+
+  const handleNavigateMatch = (index: number) => {
+    setCurrentMatchIndex(index);
   };
 
   useEffect(() => {
@@ -74,7 +90,12 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           />
           <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
           <SortButton viewId={currViewId ?? ""}/>
-          <SearchButton onSearch={handleSearch}/>
+          <SearchButton 
+            onSearch={handleSearch}
+            numSearchResults={numSearchResults}
+            currentMatchIndex={currentMatchIndex}
+            onNavigateMatch={handleNavigateMatch}
+          />
         </div>
       </header>
       {/*Main Box*/}
@@ -97,6 +118,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                   setCurrentViewIdState(view.id);
                   setCurrentViewName(view.name);
                   name = view.name;
+                  // Reset search when switching views
+                  setSearchTerm("");
+                  setCurrentMatchIndex(0);
                 }}
               >
                 {view.name}
@@ -111,6 +135,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             tableId={tableId}
             hiddenColumns={hiddenColumns}
             searchTerm={searchTerm}
+            currentMatchIndex={currentMatchIndex}
+            matchingCells={matchingCells ?? []}
+            setNumMatchingCells={handleSetNumSearchResults}
           />
         )}
       </div>

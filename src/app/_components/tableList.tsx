@@ -67,7 +67,7 @@ export default function TableList({ baseId }: { baseId: string }) {
                   key={`tab-${table.id}`}
                   className={`
                     flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 
-                    rounded-t-md border-l border-r relative -mb-px
+                    rounded-t-md border-l border-r relative -mb-px cursor-pointer 
                     ${currTableId === table.id 
                       ? "bg-white text-gray-900 border-gray-300 border-b-white z-10"
                       : "bg-pink-50 text-gray-600 border-transparent hover:bg-pink-100 hover:text-gray-900 border-b border-b-gray-300"

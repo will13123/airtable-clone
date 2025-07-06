@@ -3,27 +3,45 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 
-export default function EditColumn({ columnId, viewId }: { columnId: string, viewId: string }) {
+export default function EditColumn({ 
+  columnId, 
+  viewId, 
+  onUpdate 
+}: { 
+  columnId: string; 
+  viewId: string;
+  onUpdate: () => void;
+}) {
   const utils = api.useUtils();
   const [isOpen, setOpen] = useState(false);
   const { data: type } = api.column.getType.useQuery({ columnId });
+  
   const updateSort = api.view.updateSort.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       void utils.view.getSorts.invalidate({ viewId });
+      void utils.view.getViewRows.invalidate({ viewId });
+      onUpdate();
     },
   });
+  
   const removeSort = api.view.removeSort.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       void utils.view.getSorts.invalidate({ viewId });
+      void utils.view.getViewRows.invalidate({ viewId });
+      onUpdate();
     },
   });
+  
   const removeFilter = api.view.removeFilter.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       void utils.view.getFilters.invalidate({ viewId });
+      void utils.view.getViewRows.invalidate({ viewId });
+      onUpdate();
     },
   });
 
   if (columnId === "id") return(<div></div>); // For the row no.
+  
   const handleDropDown = () => {
     setOpen(!isOpen);
   };
@@ -49,7 +67,7 @@ export default function EditColumn({ columnId, viewId }: { columnId: string, vie
               className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
               onClick={() => {
                 updateSort.mutate({ viewId, columnId: columnId, direction: "asc" });
-                setOpen(false)
+                setOpen(false);
               }}
             >
               {
@@ -66,7 +84,7 @@ export default function EditColumn({ columnId, viewId }: { columnId: string, vie
               className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
               onClick={() => {
                 updateSort.mutate({ viewId, columnId: columnId, direction: "desc" });
-                setOpen(false)
+                setOpen(false);
               }}
             >
               {
@@ -82,7 +100,7 @@ export default function EditColumn({ columnId, viewId }: { columnId: string, vie
               className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
               onClick={() => {
                 removeSort.mutate({ viewId, columnId: columnId});
-                setOpen(false)
+                setOpen(false);
               }}
             >
               Remove Sort
@@ -91,7 +109,7 @@ export default function EditColumn({ columnId, viewId }: { columnId: string, vie
               className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
               onClick={() => {
                 removeFilter.mutate({ viewId, columnId: columnId});
-                setOpen(false)
+                setOpen(false);
               }}
             >
               Remove All Filters
@@ -100,5 +118,5 @@ export default function EditColumn({ columnId, viewId }: { columnId: string, vie
         </ul>
       </div>
     </div>
-  )
+  );
 }
