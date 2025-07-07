@@ -366,35 +366,47 @@ export const viewRouter = createTRPCRouter({
     };
   }),
 
-  // ... rest of your methods remain the same
   updateSort: protectedProcedure
-    .input(
-      z.object({
-        viewId: z.string(),
-        columnId: z.string(),
-        direction: z.enum(["asc", "desc"]),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { viewId, columnId, direction } = input;
+  .input(
+    z.object({
+      viewId: z.string(),
+      columnId: z.string(),
+      direction: z.enum(["asc", "desc"]),
+      originalSort: z.string().optional()
+    })
+  )
+  .mutation(async ({ input }) => {
+    const { viewId, columnId, direction } = input;
+    const originalSort = input.originalSort;
 
-      const view = await db.view.findUnique({
-        where: { id: viewId },
-      });
-      if (!view) throw new Error("View not found");
+    const view = await db.view.findUnique({
+      where: { id: viewId },
+    });
+    if (!view) throw new Error("View not found");
 
-      const newSort = `${columnId}:${direction}`;
-      const updatedSort = (view.sort || []).filter(
+    const newSort = `${columnId}:${direction}`;
+    let updatedSort;
+
+    if (originalSort) {
+      // Update existing sort
+      updatedSort = (view.sort || []).map(sort => 
+        sort === originalSort ? newSort : sort
+      );
+    } else {
+      // Add new sort
+      const filteredSort = (view.sort || []).filter(
         (sort) => !sort.startsWith(`${columnId}:`)
-      ).concat(newSort);
+      );
+      updatedSort = [...filteredSort, newSort];
+    }
 
-      const updatedView = await db.view.update({
-        where: { id: viewId },
-        data: { sort: updatedSort },
-      });
+    const updatedView = await db.view.update({
+      where: { id: viewId },
+      data: { sort: updatedSort },
+    });
 
-      return updatedView;
-    }),
+    return updatedView;
+  }),
 
   removeSort: protectedProcedure
     .input(

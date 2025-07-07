@@ -72,6 +72,14 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
   const availableOperators = newFilter.type === "number" ? numberOperators : textOperators;
   const needsValueInput = newFilter.operator && !['is_empty', 'is_not_empty'].includes(newFilter.operator);
   
+  const getFilteredColumnNames = () => {
+    const uniqueColumnIds = [...new Set(formattedFilters.map(f => f.columnId))];
+    return uniqueColumnIds
+      .map(columnId => columns.find(col => col.id === columnId)?.name)
+      .filter(Boolean)
+      .join(', ');
+  };
+  
   const updateFilter = api.view.updateFilter.useMutation({
     onSuccess: () => {
       void utils.view.getViewRows.invalidate({ viewId });
@@ -157,12 +165,12 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
       {/* Filter Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="py-2 px-4 text-gray-600 text-xs hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
+        className={`py-2 px-4 text-xs hover:text-gray-700 text-gray-600 focus:outline-none cursor-pointer gap-2 ${filters.length > 0 ? 'bg-green-100' : ''}`}
       >
         <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#FunnelSimple"/>
         </svg>
-       Filter
+        {filters.length === 0 ? 'Filter' : `Filtered by ${getFilteredColumnNames()}`}
       </button>
 
       {/* Filter Dropdown */}

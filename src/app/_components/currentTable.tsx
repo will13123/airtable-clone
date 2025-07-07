@@ -99,7 +99,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             onShowAll={handleShowAll}
           />
           <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
-          <SortButton viewId={currViewId ?? ""}/>
+          <SortButton viewId={currViewId ?? ""} tableId={tableId}/>
           <SearchButton 
             onSearch={handleSearch}
             numSearchResults={numSearchResults}

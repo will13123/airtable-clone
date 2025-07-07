@@ -75,12 +75,12 @@ export default function HideButton({
     <div className="relative inline-block" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xs"
+        className={`py-2 px-4 hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer text-xs ${hiddenColumns.length > 0 ? 'bg-blue-100' : ''}`}
       >
         <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#EyeSlash"/>
         </svg>
-        Hide Fields
+        {hiddenColumns.length === 0 ? 'Hide Fields' : `${hiddenColumns.length} hidden field${hiddenColumns.length === 1 ? '' : 's'}`}
       </button>
       
       {isOpen && (
