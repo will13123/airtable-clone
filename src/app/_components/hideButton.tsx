@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 type Column = {
   id: string;
@@ -12,51 +12,137 @@ type HideButtonProps = {
   columns: Column[];
   hiddenColumns: string[];
   onToggleColumn: (columnId: string) => void;
+  onHideAll: () => void;
+  onShowAll: () => void;
 }
 
-export default function HideButton({ columns, hiddenColumns, onToggleColumn }: HideButtonProps) {
+export default function HideButton({ 
+  columns, 
+  hiddenColumns, 
+  onToggleColumn,
+  onHideAll,
+  onShowAll 
+}: HideButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
+    if (!isOpen) {
+      setSearchTerm(""); 
+    }
   };
 
   const handleColumnToggle = (columnId: string) => {
     onToggleColumn(columnId);
   };
 
+  const handleHideAll = () => {
+    onHideAll();
+  };
+
+  const handleShowAll = () => {
+    onShowAll();
+  };
+
+  const allColumnsHidden = hiddenColumns.length === columns.length;
+  const allColumnsVisible = hiddenColumns.length === 0;
+
+  // Filter columns based on search term
+  const filteredColumns = columns.filter(column => 
+    column.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearchTerm("");
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
-    <div className="relative inline-block">
+    <div className="relative inline-block" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-sm"
+        className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xs"
       >
+        <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
+          <use href="/icon_definitions.svg#EyeSlash"/>
+        </svg>
         Hide Fields
       </button>
       
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+        <div className="absolute right-0 top-full  text-sm mt-2 w-64 bg-white border-b border-gray-200 rounded-md shadow-lg z-50">
           <div className="p-3">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Show/Hide Columns</h3>
+            <div className="mb-2">
+              <input
+                type="text"
+                placeholder="Find a field"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
             <div className="max-h-60 overflow-y-auto">
-              {columns.map((column) => {
-                const isVisible = !hiddenColumns.includes(column.id);
-                return (
-                  <label
-                    key={column.id}
-                    className="flex items-center space-x-2 py-1 hover:bg-gray-50 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isVisible}
-                      onChange={() => handleColumnToggle(column.id)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700 flex-1">{column.name}</span>
-                    <span className="text-xs text-gray-400 uppercase">{column.type}</span>
-                  </label>
-                );
-              })}
+              {filteredColumns.length > 0 ? (
+                filteredColumns.map((column) => {
+                  const isVisible = !hiddenColumns.includes(column.id);
+                  return (
+                    <label
+                      key={column.id}
+                      className="flex items-center space-x-2 py-1 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isVisible}
+                        onChange={() => handleColumnToggle(column.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 flex-1">{column.name}</span>
+                    </label>
+                  );
+                })
+              ) : (
+                <div className="py-2 text-sm text-gray-500 text-center">
+                  No columns found
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-3 pt-2 border-t border-gray-200">
+              <button
+                onClick={handleHideAll}
+                disabled={allColumnsHidden}
+                className={`flex-1 px-3 py-1 text-xs rounded border transition-colors ${
+                  allColumnsHidden
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700'
+                }`}
+              >
+                Hide all
+              </button>
+              <button
+                onClick={handleShowAll}
+                disabled={allColumnsVisible}
+                className={`flex-1 px-3 py-1 text-xs rounded border transition-colors ${
+                  allColumnsVisible
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700'
+                }`}
+              >
+                Show all
+              </button>
             </div>
           </div>
         </div>

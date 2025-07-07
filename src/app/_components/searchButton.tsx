@@ -51,7 +51,9 @@ export default function SearchButton({
         className={`p-2 text-gray-600 text-sm hover:text-gray-700 focus:outline-none rounded-md cursor-pointer`}
         title="Search"
       >
-        Search
+        <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
+          <use href="/icon_definitions.svg#MagnifyingGlass"/>
+        </svg>
       </button>
 
       {isOpen && (

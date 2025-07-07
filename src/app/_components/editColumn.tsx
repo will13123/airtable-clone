@@ -32,13 +32,6 @@ export default function EditColumn({
     },
   });
   
-  const removeFilter = api.view.removeFilter.useMutation({
-    onSuccess: async () => {
-      void utils.view.getFilters.invalidate({ viewId });
-      void utils.view.getViewRows.invalidate({ viewId });
-      onUpdate();
-    },
-  });
 
   if (columnId === "id") return(<div></div>); // For the row no.
   
@@ -104,15 +97,6 @@ export default function EditColumn({
               }}
             >
               Remove Sort
-            </button>
-            <button
-              className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 cursor-pointer"
-              onClick={() => {
-                removeFilter.mutate({ viewId, columnId: columnId});
-                setOpen(false);
-              }}
-            >
-              Remove All Filters
             </button>
           </li>
         </ul>

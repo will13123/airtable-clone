@@ -37,12 +37,15 @@ export default function Sortbutton({ viewId }: { viewId: string }) {
     <div className="relative inline-block">
       <button
         onClick={handleDropDown}
-        className="py-2 px-4 text-gray-600 text-sm hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
+        className="py-2 px-4 text-gray-600 text-xs hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
       >
+        <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
+          <use href="/icon_definitions.svg#ArrowsDownUp"/>
+        </svg>
         Sort
       </button>
       <div
-        className={`absolute right-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
+        className={`absolute right-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
           isOpen ? 'block' : 'hidden'
         }`}
       >

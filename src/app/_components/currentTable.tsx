@@ -55,6 +55,14 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     );
   };
 
+  const handleHideAll = () => {
+    setHiddenColumns(tableColumns ? tableColumns?.map(c => c.id) : []);
+  }
+  
+  const handleShowAll = () => {
+    setHiddenColumns([]);
+  }
+
   const handleSearch = (search: string) => {
     setSearchTerm(search);
   };
@@ -87,6 +95,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             columns={tableColumns ?? []} 
             hiddenColumns={hiddenColumns}
             onToggleColumn={handleToggleColumn}
+            onHideAll={handleHideAll}
+            onShowAll={handleShowAll}
           />
           <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
           <SortButton viewId={currViewId ?? ""}/>

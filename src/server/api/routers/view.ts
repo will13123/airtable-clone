@@ -424,39 +424,50 @@ export const viewRouter = createTRPCRouter({
     }),
   
   updateFilter: protectedProcedure
-    .input(
-      z.object({
-        viewId: z.string(),
-        columnId: z.string(),
-        operator: z.string(),
-        value: z.string()
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { viewId, columnId, operator, value } = input;
+  .input(
+    z.object({
+      viewId: z.string(),
+      columnId: z.string(),
+      operator: z.string(),
+      value: z.string(),
+      originalFilter: z.string().optional()
+    })
+  )
+  .mutation(async ({ input }) => {
+    const { viewId, columnId, operator, value } = input;
+    const originalFilter = input.originalFilter;
+    
+    const view = await db.view.findUnique({
+      where: { id: viewId },
+    });
+    if (!view) return;
 
-      const view = await db.view.findUnique({
-        where: { id: viewId },
-      });
-      if (!view) return;
+    const newFilter = `${columnId}:${operator}:${value}`;
+    let updatedFilters;
 
-      const newFilter = `${columnId}:${operator}:${value}`;
+    if (originalFilter) {
+      updatedFilters = view.filters.map(filter => 
+        filter === originalFilter ? newFilter : filter
+      );
+    } else {
+      updatedFilters = [...view.filters, newFilter];
+    }
 
-      await db.view.update({
-        where: { id: viewId },
-        data: { filters: [...view.filters, newFilter] },
-      });
-
-    }),
+    await db.view.update({
+      where: { id: viewId },
+      data: { filters: updatedFilters },
+    });
+  }),
+  
   removeFilter: protectedProcedure
     .input(
       z.object({
         viewId: z.string(),
-        columnId: z.string(),
+        filter: z.string(),
       })
     )
     .mutation(async ({ input }) => {
-      const { viewId, columnId } = input;
+      const { viewId, filter } = input;
 
       const view = await db.view.findUnique({
         where: { id: viewId },
@@ -464,8 +475,8 @@ export const viewRouter = createTRPCRouter({
       if (!view) throw new Error("View not found");
 
       const updatedFilters = (view.filters || []).filter(
-        (sort) => !sort.startsWith(`${columnId}:`)
-      )
+        (sort) => sort !== `${filter}`)
+      
 
       const updatedView = await db.view.update({
         where: { id: viewId },
