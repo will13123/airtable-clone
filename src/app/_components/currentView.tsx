@@ -24,15 +24,6 @@ type CellType = {
   type: string;
 }
 
-// type ColumnType = { 
-//   type: string; 
-//   name: string; 
-//   id: string; 
-//   createdAt: Date; 
-//   updatedAt: Date; 
-//   tableId: string; 
-// }
-
 type MatchingCell = {
   id: string;
   value: string;
@@ -50,14 +41,13 @@ type SearchMatch = {
 const columnHelper = createColumnHelper<RowType>();
 
 // Configuration
-const PAGE_SIZE = 1000;
-const PREFETCH_THRESHOLD = 2000;
+const PAGE_SIZE = 500;
+const PREFETCH_THRESHOLD = 3000;
 
 export default function CurrentView({ 
   viewId, 
   tableId, 
   hiddenColumns,
-  searchTerm,
   currentMatchIndex,
   matchingCells,
   setNumMatchingCells
@@ -131,6 +121,11 @@ export default function CurrentView({
     [matchingCells]
   );
 
+  const visibleColumns = useMemo(() => 
+    allColumns.filter(column => !hiddenColumns.includes(column.id)),
+    [allColumns, hiddenColumns]
+  );
+
   // Build search index whenever rows or search results change
   useEffect(() => {
     if (!matchingCells.length || !allRows.length) {
@@ -139,12 +134,16 @@ export default function CurrentView({
       return;
     }
 
+    const visibleColumnIds = new Set(visibleColumns.map(col => col.id));
+
     const matches: SearchMatch[] = [];
     
     // Iterate through rows and check each cell
     allRows.forEach((row, rowIndex) => {
       row.cells.forEach((cell) => {
-        if (cell.cellId && matchingCellIds.has(cell.cellId)) {
+        if (cell.cellId && 
+            matchingCellIds.has(cell.cellId) && 
+            visibleColumnIds.has(cell.columnId)) {
           matches.push({
             cellId: cell.cellId,
             rowIndex,
@@ -157,7 +156,7 @@ export default function CurrentView({
 
     setSearchMatches(matches);
     setNumMatchingCellsRef.current(matches.length);
-  }, [allRows, matchingCells, matchingCellIds]); // Don't include setNumMatchingCells
+  }, [allRows, matchingCells, matchingCellIds, visibleColumns]);
 
   // Refetch when dependencies change
   useEffect(() => {
@@ -204,10 +203,7 @@ export default function CurrentView({
     setColumnDropdownIsOpen(!columnDropdownIsOpen);
   }, [columnDropdownIsOpen]);
 
-  const visibleColumns = useMemo(() => 
-    allColumns.filter(column => !hiddenColumns.includes(column.id)),
-    [allColumns, hiddenColumns]
-  );
+
 
   const sortColumnIds = useMemo(() => 
     sorts?.map((sort) => sort.split(":")[0] ?? "") ?? [],
@@ -253,7 +249,7 @@ export default function CurrentView({
         });
       }
     }
-  }, [currentMatchIndex, searchMatches, virtualizer]);
+  }, [currentMatchIndex, virtualizer]);
 
   // Editable Cell component
   const EditableCell = React.memo(({
@@ -333,7 +329,7 @@ export default function CurrentView({
 
   const tableColumns = useMemo(
     () => [
-      ...visibleColumns.map((column) =>
+      ...visibleColumns.map((column, index) =>
         columnHelper.accessor(
           (row) => {
             const cell = row.cells.find((cell) => cell.columnId === column.id);
@@ -342,7 +338,7 @@ export default function CurrentView({
           {
             id: column.id,
             header: `${column.name}`,
-            meta: { type: column.type },
+            meta: { type: column.type, isFirstColumn: index === 0 },
             size: 200,
             cell: (info) => {
               const initialValue = info.getValue();
@@ -411,13 +407,13 @@ export default function CurrentView({
   if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden flex-1">
       
       {/* Main Table */}
       <div className="flex flex-col h-[80dvh]">
         <div 
           ref={scrollRef} 
-          className="h-[80dvh] w-full overflow-auto flex-1 border border-gray-200 border-b-1"
+          className="h-[80dvh] w-full overflow-auto flex-1 border border-gray-200 border-b-1 relative"
         >
           <table
             className="h-full text-left rtl:text-right text-gray-500 relative bg-white"
@@ -426,14 +422,20 @@ export default function CurrentView({
               tableLayout: "fixed",
             }}
           >
-            <thead className="text-gray-400" style={{ width: "100%" }}>
+            {/* Sticky Header */}
+            <thead 
+              className="text-gray-400 sticky top-0 z-20 bg-white shadow-sm" 
+              style={{ width: "100%" }}
+            >
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b">
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers.map((header, index) => (
                     <th
                       key={header.id}
                       colSpan={header.colSpan}
-                      className="p-2 text-left text-sm border-r"
+                      className={`p-2 text-left text-sm border-r bg-white ${
+                        index === 0 ? 'sticky left-0 z-30' : ''
+                      }`}
                       style={{
                         width: "200px",
                         minWidth: "200px",
@@ -470,10 +472,12 @@ export default function CurrentView({
                       width: '100%',
                     }}
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells().map((cell, index) => (
                       <td 
                         key={cell.id} 
-                        className="border-r h-[45px]"
+                        className={`border-r h-[45px] ${
+                          index === 0 ? 'sticky left-0 z-10 bg-white' : ''
+                        }`}
                         style={{
                           width: "200px",
                           minWidth: "200px",
@@ -554,7 +558,7 @@ export default function CurrentView({
             className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xl gap-2 border-l-2 border-gray-300"
             onClick={handleCreateManyRows}
           >
-            Create 10K Rows
+            Create 100K Rows
           </button>
         </div>
       </div>

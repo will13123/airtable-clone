@@ -14,6 +14,19 @@ export default function CreateTable({ baseId }: { baseId: string }) {
       setName("");
     },
   });
+
+  const createRow = api.row.create.useMutation({
+    onSuccess: () => {
+      void utils.table.invalidate();
+    },
+  });
+  
+  const createColumn = api.column.create.useMutation({
+    onSuccess: () => {
+      void utils.table.invalidate();
+    }
+  });
+
   const handleDropDown = () => {
     setOpen(!isOpen);
   };
@@ -38,11 +51,36 @@ export default function CreateTable({ baseId }: { baseId: string }) {
           <ul className="py-1 text-sm text-gray-700">
             <li>
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   setOpen(!isOpen);
                   if (name.length > 0) {
-                    createTable.mutate({ baseId, name });
+                    const tableId = await createTable.mutateAsync({ baseId, name });
+                    if (tableId) {                      
+                      // Create default columns and rows
+                      await createColumn.mutateAsync({ 
+                        tableId, 
+                        type: "text", 
+                        name: "Name" 
+                      });
+                      
+                      await createColumn.mutateAsync({ 
+                        tableId, 
+                        type: "number", 
+                        name: "Value" 
+                      });
+                      
+                      await createColumn.mutateAsync({ 
+                        tableId, 
+                        type: "text", 
+                        name: "Notes" 
+                      });
+                      await createRow.mutateAsync({ tableId });
+                      await createRow.mutateAsync({ tableId });
+                      await createRow.mutateAsync({ tableId });
+                      await createRow.mutateAsync({ tableId });
+                      await createRow.mutateAsync({ tableId });
+                    }
                   } else {
                     alert("Name must have at least one character");
                   }
