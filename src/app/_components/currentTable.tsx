@@ -30,8 +30,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [numSearchResults, setNumSearchResults] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Simple search for matching cells
+  // Search for matching cells
   const { data: matchingCells } = api.view.searchCells.useQuery(
     { viewId: currViewId ?? "", searchTerm },
     { enabled: !!searchTerm.trim() && !!currViewId }
@@ -71,6 +72,10 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     setCurrentMatchIndex(index);
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   useEffect(() => {
       if (views && earliestView && currViewId === "") {
         void setCurrView.mutate({ tableId, viewId: earliestView.id });
@@ -87,10 +92,18 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
       {/* Top bar for table */}
       <header className="flex justify-center items-center bg-white border-b-1 border-solid border-neutral-300 p-1 pr-5">
         <div className="flex flex-1 justify-start items-center gap-2">
+          <button
+            onClick={toggleSidebar}
+            className="p-2 pt-1 pb-1 hover:bg-gray-100 rounded cursor-pointer"
+          >
+            <svg className="w-4 h-4 fill-current inline-block" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#List"/>
+            </svg>
+          </button>
           <p className="text-sm font-semibold">{currentViewName}</p>
         </div>
         <div className="flex-1"></div>
-        <div className="flex flex-row justify-between items-center flex-1">
+        <div className="flex flex-row justify-between items-center flex-2 gap-2">
           <HideButton 
             columns={tableColumns ?? []} 
             hiddenColumns={hiddenColumns}
@@ -111,14 +124,16 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
       {/*Main Box*/}
       <div className="flex w-full">
         {/* Sidebar */}
-        <div className=" text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-1">
-          <div className="p-2 flex flex-col">
+        <div className={`text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-1 transition-all duration-200 ease-in-out overflow-hidden ${
+          !sidebarOpen ? 'w-0' : 'w-[200px]'
+        }`}>
+          <div className="p-2 flex flex-col w-[200px]">
             <CreateView tableId={tableId}/>
             
             {views?.map((view) => (
               <button
                 key={view.id}
-                className={`p-3 text-sm cursor-pointer pr-15 text-left ${
+                className={`p-3 text-sm cursor-pointer pr-15 text-left whitespace-nowrap transition-colors duration-200 ${
                   currViewId === view.id
                     ? 'bg-gray-100'
                     : 'hover:bg-gray-100 bg-white'

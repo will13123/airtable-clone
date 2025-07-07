@@ -165,7 +165,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
       {/* Filter Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`py-2 px-4 text-xs hover:text-gray-700 text-gray-600 focus:outline-none cursor-pointer gap-2 ${filters.length > 0 ? 'bg-green-100' : ''}`}
+        className={`rounded-xs py-2 px-4 hover:bg-gray-100 text-xs hover:text-gray-700 text-gray-600 focus:outline-none cursor-pointer gap-2 ${filters.length > 0 ? 'bg-green-100' : ''}`}
       >
         <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#FunnelSimple"/>

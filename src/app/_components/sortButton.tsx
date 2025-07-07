@@ -144,7 +144,7 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
     <div className="relative inline-block" ref={dropdownRef}>
       <button
         onClick={handleDropDown}
-        className={`py-2 px-4 text-xs hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer gap-2 ${sorts.length > 0 ? 'bg-orange-100' : ''}`}
+        className={`rounded-xs hover:bg-gray-100 py-2 px-4 text-xs hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer gap-2 ${sorts.length > 0 ? 'bg-orange-100' : ''}`}
       >
         <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#ArrowsDownUp"/>
