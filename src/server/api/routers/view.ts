@@ -536,7 +536,7 @@ export const viewRouter = createTRPCRouter({
         where: { id: viewId },
       });
       if (!view) return [];
-      return view.hiddenColumns as string[] ?? [];
+      return view.hiddenColumns ?? [];
     }),
   
   updateHiddenColumns: protectedProcedure
@@ -554,7 +554,7 @@ export const viewRouter = createTRPCRouter({
     
     if (!view) return
     
-    const currentHidden = view.hiddenColumns as string[] ?? [];
+    const currentHidden = view.hiddenColumns ?? [];
     const isCurrentlyHidden = currentHidden.includes(columnId);
     
     const newHiddenColumns = isCurrentlyHidden

@@ -50,6 +50,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const [currentViewIdState, setCurrentViewIdState] = useState<string>(currViewId ?? "");
   const [currentViewName, setCurrentViewName] = useState(name);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [viewSearchTerm, setViewSearchTerm] = useState<string>("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [numSearchResults, setNumSearchResults] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -152,12 +153,32 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           !sidebarOpen ? 'w-0' : 'w-[200px]'
         }`}>
           <div className="p-2 flex flex-col w-[200px]">
-            <CreateView tableId={tableId} isOpen={isOpen} setOpen={setOpen}/>
+            <div className="w-full">
+              <CreateView tableId={tableId} isOpen={isOpen} setOpen={setOpen}/>
+            </div>
             
-            {views?.map((view) => (
+            {/* Search bar for views */}
+            <div className="w-full mt-2 mb-2">
+              <div className="relative">
+                <svg className="w-4 h-4 fill-current inline-block absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" viewBox="0 0 22 22">
+                  <use href="/icon_definitions.svg#MagnifyingGlass"/>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Find a view..."
+                  value={viewSearchTerm}
+                  onChange={(e) => setViewSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 text-sm focus:outline-blue-500 rounded-md"
+                />
+              </div>
+            </div>
+            
+            {views?.filter(view => 
+              view.name.toLowerCase().includes(viewSearchTerm.toLowerCase())
+            ).map((view) => (
               <button
                 key={view.id}
-                className={`p-3 text-sm cursor-pointer pr-15 text-left whitespace-nowrap transition-colors duration-200 ${
+                className={`w-full p-3 text-sm cursor-pointer text-left whitespace-nowrap transition-colors duration-200 flex items-center ${
                   currViewId === view.id
                     ? 'bg-gray-100'
                     : 'hover:bg-gray-100 bg-white'
@@ -172,6 +193,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                   setCurrentMatchIndex(0);
                 }}
               >
+                <svg className="w-4 h-4 mr-2 fill-blue-500 inline-block" viewBox="0 0 22 22">
+                  <use href="/icon_definitions.svg#GridFeature"/>
+                </svg>
                 {view.name}
               </button>
             ))}

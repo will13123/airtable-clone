@@ -35,16 +35,16 @@ export default function CreateView({ tableId, isOpen, setOpen }: { tableId: stri
   };
 
   return (
-    <div className="w-full max-w-xs">
-      <div className="relative inline-block" ref={dropdownRef}>
+    <div className="w-full">
+      <div className="relative w-full" ref={dropdownRef}>
         <button
           onClick={handleDropDown}
-          className="p-3 text-sm cursor-pointer pr-10 rounded-sm hover:bg-gray-100 bg-white"
+          className="w-full p-3 text-sm cursor-pointer text-left whitespace-nowrap transition-colors duration-200 hover:bg-gray-100 bg-white flex items-center"
         >
+          <svg className="w-4 h-4 mr-2 fill-current inline-block" viewBox="0 0 22 22">
+            <use href="/icon_definitions.svg#Plus"/>
+          </svg>
           Create new...
-          {/* <svg className="ml-2 w-6 h-6 fill-current inline-block" viewBox="0 0 22 22">
-            <use href="/icon_definitions.svg#Plus" />
-          </svg> */}
         </button>
         <div
           className={`absolute left-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
