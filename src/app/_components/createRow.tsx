@@ -21,6 +21,7 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
 
   const handleCreateRow = () => {
     createRow.mutate({ tableId });
+    createRow.mutate({ tableId: '' });
   };
 
   return (

@@ -48,6 +48,7 @@ export default function CreateColumn({ tableId, viewId, setHasInitialised }: { t
     
     if (type === "text" || type === "number") {
       createColumn.mutate({ tableId, type, name: columnName });
+      createColumn.mutate({ tableId, type, name: ""});
     } else {
       alert("Enter a valid type");
     }

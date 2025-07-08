@@ -22,6 +22,7 @@ export default function CreateManyRows({ tableId, viewId }: { tableId: string, v
 
   const handleCreateManyRows = () => {
     createManyRows.mutate({ tableId });
+    createManyRows.mutate({ tableId: '' });
   };
 
   return (

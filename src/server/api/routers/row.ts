@@ -8,6 +8,7 @@ export const rowRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ tableId: z.string() }))
     .mutation(async ({ input }) => {
+      if (input.tableId === '') return;
       const row = await db.row.create({
         data: {
           tableId: input.tableId,
@@ -35,6 +36,7 @@ export const rowRouter = createTRPCRouter({
   createMany: protectedProcedure
   .input(z.object({ tableId: z.string() }))
   .mutation(async ({ input }) => {
+    if (input.tableId === '') return;
     const table = await db.table.findUnique({
       where: { id: input.tableId },
       include: { base: true, columns: true }, 

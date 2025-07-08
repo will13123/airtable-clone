@@ -8,6 +8,7 @@ export const columnRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ tableId: z.string(), type: z.string(), name: z.string() }))
     .mutation(async ({ input }) => {
+      if (input.name === '') return;
       const col = await db.column.create({
         data: {
           tableId: input.tableId,
@@ -15,7 +16,6 @@ export const columnRouter = createTRPCRouter({
           name: input.name,
         },
       });
-
       // Process rows using cursor-based pagination
       const batchSize = 10000; 
       let cursorId: string | null = null;

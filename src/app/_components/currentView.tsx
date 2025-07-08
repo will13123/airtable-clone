@@ -149,7 +149,7 @@ export default function CurrentView({
       setNumMatchingCellsRef.current(0);
       return;
     }
-    if (searchTerm === "") {
+    if (searchTerm.length === 0) {
       setSearchMatches([]);
       setNumMatchingCellsRef.current(0);
       return;
