@@ -22,7 +22,7 @@ export default function DashboardWrapper({ name, profileImage, email, userId }: 
 
   return (
     <div className="bg-neutral-300">
-      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-3 pl-3">
+      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-3 pl-3 z-50">
         <div className="flex flex-1 justify-start items-center gap-2">
           <ToggleButton onToggle={toggleSidebar} />
           <Image

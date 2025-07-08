@@ -15,13 +15,13 @@ export default function BaseList({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-4">
+    <div className="grid grid-cols-4 gap-8 mb-4">
       {bases.map((base) => (
         <Link
           key={base.id}
           href={`/base?id=${base.id}&name=${base.name}`}
         >
-          <div key={base.id} className="bg-white p-9 rounded shadow hover:shadow-xl content-center">
+          <div key={base.id} className="bg-white rounded-lg border border-neutral-200 p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer">
             {base.name}
           </div>
         </Link>
