@@ -41,6 +41,17 @@ type SearchMatch = {
   value: string;
 }
 
+type PageData = {
+  rows: RowType[];
+  nextCursor?: string;
+  columns?: Array<{id: string; name: string; type: string}>;
+}
+
+type InfiniteQueryData = {
+  pages: PageData[];
+  pageParams: (string | undefined)[];
+}
+
 const columnHelper = createColumnHelper<RowType>();
 
 // Configuration
@@ -180,10 +191,28 @@ export default function CurrentView({
 
   // Mutations
   const updateCell = api.table.updateCell.useMutation({
-    onSuccess: () => {
-      void refetch();
-      void utils.view.getViewRows.invalidate({ viewId });
-    },
+    onSuccess: (data, variables: { cellId: string; value: string }) => {
+    // Update the cache after successful cell edit to keep changes
+    queryClient.setQueryData<InfiniteQueryData>(['viewRows', viewId], (oldData) => {
+      if (!oldData?.pages) return oldData;
+      
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page: PageData) => ({
+          ...page,
+          rows: page.rows.map((row: RowType) => ({
+            ...row,
+            cells: row.cells.map((cell: CellType) => 
+              cell.cellId === variables.cellId 
+                ? { ...cell, value: variables.value }
+                : cell
+            )
+          }))
+        }))
+      };
+    });
+  },
+
   });
 
   const sortColumnIds = useMemo(() => 
@@ -259,7 +288,6 @@ export default function CurrentView({
     filterColumnIds?: string[];    
   }) => {
     const [value, setValue] = useState(initialValue);
-    const [originalValue, setOriginalValue] = useState(initialValue);
     
     const isValidValue = useCallback((val: string) => {
       if (val === "") return true;
@@ -277,23 +305,20 @@ export default function CurrentView({
 
     useEffect(() => {
       setValue(initialValue);
-      setOriginalValue(initialValue);
     }, [initialValue]);
 
     const handleBlur = useCallback(() => {
-      if (cell.cellId && originalValue !== value) {
+      if (cell.cellId) {
         if (isValidValue(value)) {
           updateCell.mutate({
             cellId: cell.cellId,
             value,
           });
-          setOriginalValue(value);
         } else {
           alert(`Please input only ${cell.type === "text" ? "letters" : "numbers"}`);
-          setValue(originalValue);
         }
       }
-    }, [cell.cellId, cell.type, value, originalValue, isValidValue]);
+    }, [cell.cellId, cell.type, value, isValidValue]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
