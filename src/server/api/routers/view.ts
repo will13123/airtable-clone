@@ -495,9 +495,8 @@ export const viewRouter = createTRPCRouter({
       searchTerm: z.string()
     }))
     .query(async ({ input }) => {
-      if (!input.searchTerm.trim()) {
-        return []; 
-      }
+      if (!input.searchTerm.trim()) return []; 
+      if (input.searchTerm.length === 0) return [];
 
       const view = await db.view.findUnique({
         where: { id: input.viewId },
