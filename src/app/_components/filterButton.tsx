@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { api } from '~/trpc/react';
+import { useQueryClient } from '@tanstack/react-query';
 
 const textOperators = [
   { value: 'contains', label: 'contains' },
@@ -22,6 +23,7 @@ const numberOperators = [
 ];
 
 export default function FilterButton({ tableId, viewId }: { tableId: string, viewId: string }) {
+  const queryClient = useQueryClient();
   const utils = api.useUtils();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -84,6 +86,12 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
     onSuccess: () => {
       void utils.view.getViewRows.invalidate({ viewId });
       void utils.view.getFilters.invalidate({ viewId });
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
     },
   });
 
@@ -91,6 +99,12 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
     onSuccess: () => {
       void utils.view.getViewRows.invalidate({ viewId });
       void utils.view.getFilters.invalidate({ viewId });
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
     },
   });
 

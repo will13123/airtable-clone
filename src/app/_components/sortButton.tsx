@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const textSortOptions = [
   { value: 'asc', label: 'A-Z' },
@@ -14,6 +15,7 @@ const numberSortOptions = [
 ];
 
 export default function Sortbutton({ viewId, tableId }: { viewId: string, tableId: string }) {
+  const queryClient = useQueryClient();
   const utils = api.useUtils();
   const [isOpen, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,6 +49,12 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
   const updateSort = api.view.updateSort.useMutation({
     onSuccess: () => {
       void utils.view.getViewRows.invalidate({ viewId });
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
       void utils.view.getSorts.invalidate({ viewId });
     },
   });
@@ -54,6 +62,12 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
   const removeSort = api.view.removeSort.useMutation({
     onSuccess: () => {
       void utils.view.getViewRows.invalidate({ viewId });
+      void queryClient.resetQueries({ 
+      queryKey: ['viewRows', viewId] 
+    });
+    void queryClient.refetchQueries({ 
+      queryKey: ['viewRows', viewId] 
+    });
       void utils.view.getSorts.invalidate({ viewId });
     },
   });

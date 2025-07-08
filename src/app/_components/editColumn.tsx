@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function EditColumn({ 
   columnId, 
@@ -13,6 +14,7 @@ export default function EditColumn({
   onUpdate: () => void;
 }) {
   const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const [isOpen, setOpen] = useState(false);
   const { data: type } = api.column.getType.useQuery({ columnId });
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -37,7 +39,12 @@ export default function EditColumn({
     onSuccess: async () => {
       void utils.view.getSorts.invalidate({ viewId });
       void utils.view.getViewRows.invalidate({ viewId });
-      onUpdate();
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
     },
   });
   
@@ -45,7 +52,12 @@ export default function EditColumn({
     onSuccess: async () => {
       void utils.view.getSorts.invalidate({ viewId });
       void utils.view.getViewRows.invalidate({ viewId });
-      onUpdate();
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
     },
   });
   
