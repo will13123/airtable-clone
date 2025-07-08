@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useQueryClient } from "@tanstack/react-query";
 
-export default function CreateColumn({ tableId, viewId }: { tableId: string, viewId: string }) {
+export default function CreateColumn({ tableId, viewId, setHasInitialised }: { tableId: string, viewId: string, setHasInitialised: (input: boolean) => void }) {
   const queryClient = useQueryClient();
   const utils = api.useUtils();
 
@@ -13,9 +13,12 @@ export default function CreateColumn({ tableId, viewId }: { tableId: string, vie
 
   const createColumn = api.column.create.useMutation({
     onSuccess: () => {
-      void queryClient.resetQueries({ queryKey: ['viewRows', viewId] });
-      void utils.view.getViewRows.invalidate({ viewId });
-      void utils.table.getColumns.invalidate({ tableId });
+      queryClient.removeQueries({ queryKey: ['viewRows', viewId] });
+      setHasInitialised(false);
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId],
+        type: 'all'
+      });
     }
   });
 

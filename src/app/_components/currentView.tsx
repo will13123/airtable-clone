@@ -80,7 +80,7 @@ export default function CurrentView({
   );
   
   const [allColumns, setAllColumns] = useState<Array<{id: string; name: string; type: string}>>([]);
-  const [hasInitialized, setHasInitialized] = useState(false);
+  const [hasInitialized, setHasInitialised] = useState(false);
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
   const queryClient = useQueryClient();
   
@@ -111,7 +111,7 @@ export default function CurrentView({
       // Set columns on first fetch
       if (!hasInitialized && result?.columns) {
         setAllColumns(result.columns);
-        setHasInitialized(true);
+        setHasInitialised(true);
       }
       
       return result;
@@ -181,7 +181,7 @@ export default function CurrentView({
   // Refetch when dependencies change - currently refetch function not rlly working
   useEffect(() => {
     if (viewId) {
-      setHasInitialized(false);
+      setHasInitialised(false);
       void refetch();
       void queryClient.invalidateQueries({ 
         queryKey: ['viewRows', viewId] 
@@ -263,7 +263,7 @@ export default function CurrentView({
 
   // Handle refetch callback
   const handleRefetch = useCallback(() => {
-    setHasInitialized(false);
+    setHasInitialised(false);
     void refetch();
   }, [refetch]);
 
@@ -463,10 +463,12 @@ export default function CurrentView({
                         height: '45px'
                       }}
                     >
-                      <div className="inline-block">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      <div className="flex items-center justify-between w-full">
+                        <div className="inline-block">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </div>
+                        <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={handleRefetch}/>
                       </div>
-                      <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={handleRefetch}/>
                     </th>
                   ))}
                 </tr>
@@ -526,6 +528,7 @@ export default function CurrentView({
           <CreateColumn 
             tableId={tableId} 
             viewId={viewId} 
+            setHasInitialised={setHasInitialised}
           />
           <CreateManyRows 
             tableId={tableId} 
