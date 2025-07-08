@@ -9,7 +9,12 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
 
   const createRow = api.row.create.useMutation({
     onSuccess: () => {
-      void queryClient.resetQueries({ queryKey: ['viewRows', viewId] });
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
       void utils.view.getViewRows.invalidate({ viewId });
     },
   });

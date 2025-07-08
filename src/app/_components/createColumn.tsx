@@ -13,12 +13,14 @@ export default function CreateColumn({ tableId, viewId, setHasInitialised }: { t
 
   const createColumn = api.column.create.useMutation({
     onSuccess: () => {
-      queryClient.removeQueries({ queryKey: ['viewRows', viewId] });
       setHasInitialised(false);
-      void queryClient.refetchQueries({ 
-        queryKey: ['viewRows', viewId],
-        type: 'all'
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
       });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void utils.view.getViewRows.invalidate({ viewId });
     }
   });
 

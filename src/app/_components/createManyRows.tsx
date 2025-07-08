@@ -10,7 +10,12 @@ export default function CreateManyRows({ tableId, viewId }: { tableId: string, v
 
   const createManyRows = api.row.createMany.useMutation({
     onSuccess: () => {
-      void queryClient.resetQueries({ queryKey: ['viewRows', viewId] });
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
       void utils.view.getViewRows.invalidate({ viewId });
     },
   });

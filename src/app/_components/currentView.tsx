@@ -350,7 +350,7 @@ export default function CurrentView({
           </div>
         )}
         <input
-          className={`w-full h-full p-2 border-0 text-right text-sm rounded-none ${
+          className={`w-full h-full p-2 border-r border-gray-300 text-right text-sm rounded-none ${
             sortColumnIds?.includes(cell.columnId) ? "bg-orange-100" : ""
           } ${
             filterColumnIds?.includes(cell.columnId) ? "bg-green-100" : ""
@@ -498,7 +498,7 @@ export default function CurrentView({
                       <td 
                         key={cell.id} 
                         className={`border-r h-[45px] ${
-                          index === 0 ? 'sticky left-0 z-10 bg-white' : ''
+                          index === 0 ? 'sticky left-0 z-10 bg-white border-r-2 border-gray-300' : ''
                         }`}
                         style={{
                           width: "200px",
