@@ -102,14 +102,23 @@ export default function HideButton({
                   return (
                     <label
                       key={column.id}
-                      className="flex items-center space-x-2 py-1 hover:bg-gray-50 cursor-pointer"
+                      className="flex items-center space-x-2 py-2 hover:bg-gray-50 cursor-pointer px-1 rounded"
                     >
-                      <input
-                        type="checkbox"
-                        checked={isVisible}
-                        onChange={() => handleColumnToggle(column.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={isVisible}
+                          onChange={() => handleColumnToggle(column.id)}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-2 rounded-full transition-colors duration-200 ${
+                          isVisible ? 'bg-green-600' : 'bg-gray-300'
+                        }`}>
+                          <div className={`w-1 h-1 bg-white rounded-full shadow-sm transition-transform duration-200 transform ${
+                            isVisible ? 'translate-x-2.5' : 'translate-x-0.5'
+                          } translate-y-0.5`}></div>
+                        </div>
+                      </div>
                       <span className="text-sm text-gray-700 flex-1">{column.name}</span>
                     </label>
                   );
