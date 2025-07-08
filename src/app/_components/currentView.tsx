@@ -341,7 +341,6 @@ export default function CurrentView({
         e.preventDefault();
       }
     }, [cell?.type]);
-
     return (
       <div className="flex items-center h-full">
         {isFirstColumn && (
@@ -394,8 +393,7 @@ export default function CurrentView({
               
               // Check if this is the current match using our search index
               const currentMatch = searchMatches[currentMatchIndex];
-              const isCurrentMatch = currentMatch?.cellId === cell?.cellId;
-              
+              const isCurrentMatch = currentMatch ? currentMatch?.cellId === cell?.cellId : false;
               return (
                 <EditableCell
                   initialValue={initialValue}
