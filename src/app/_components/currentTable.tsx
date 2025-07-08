@@ -15,7 +15,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const { data: currViewId } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
   const { data: tableColumns } = api.table.getColumns.useQuery({ tableId });
-
+  const [isOpen, setOpen] = useState(false); // For the createView dropdown
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
       void utils.table.getCurrView.invalidate({ tableId });
@@ -124,11 +124,11 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
       {/*Main Box*/}
       <div className="flex w-full">
         {/* Sidebar */}
-        <div className={`text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-1 transition-all duration-200 ease-in-out overflow-hidden ${
+        <div className={`text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-1 transition-all duration-200 ease-in-out ${isOpen ? 'overflow-visible' : 'overflow-hidden'} ${
           !sidebarOpen ? 'w-0' : 'w-[200px]'
         }`}>
           <div className="p-2 flex flex-col w-[200px]">
-            <CreateView tableId={tableId}/>
+            <CreateView tableId={tableId} isOpen={isOpen} setOpen={setOpen}/>
             
             {views?.map((view) => (
               <button

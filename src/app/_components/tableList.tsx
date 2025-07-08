@@ -5,16 +5,21 @@ import { useEffect, useState } from 'react'
 import { api } from "~/trpc/react";
 import CurrentTable from './currentTable';
 import CreateTable from './createTable';
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function TableList({ baseId }: { baseId: string }) {
   const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const { data: tables, isLoading } = api.base.getTables.useQuery({ baseId });
   const { data: earliestTable } = api.base.earliestTable.useQuery({ baseId });
   const { data: currTableId } = api.base.getCurrTable.useQuery({ baseId });
 
   const setCurrTable = api.base.setCurrTable.useMutation({
     onSuccess: () => {
+      const currTable = tables?.find(t => t.id === currentTableIdState);
+      void utils.view.getViewRows.invalidate({ viewId: currTable?.currView });
       void utils.base.getCurrTable.invalidate({ baseId });
+      void queryClient.resetQueries({ queryKey: ['viewRows', currTable?.currView] });
     },
   });
 

@@ -11,6 +11,9 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import EditColumn from "./editColumn";
+import CreateRow from "./createRow";
+import CreateColumn from "./createColumn";
+import CreateManyRows from "./createManyRows";
 
 type RowType = { 
   id: string, 
@@ -50,7 +53,8 @@ export default function CurrentView({
   hiddenColumns,
   currentMatchIndex,
   matchingCells,
-  setNumMatchingCells
+  setNumMatchingCells,
+  searchTerm
 }: { 
   viewId: string, 
   tableId: string,
@@ -58,7 +62,7 @@ export default function CurrentView({
   searchTerm: string,
   currentMatchIndex: number,
   matchingCells: MatchingCell[],
-  setNumMatchingCells: (value: number) => void
+  setNumMatchingCells: (value: number) => void,
 }) {
   const utils = api.useUtils();
   
@@ -133,7 +137,11 @@ export default function CurrentView({
       setNumMatchingCellsRef.current(0);
       return;
     }
-
+    if (searchTerm === "") {
+      setSearchMatches([]);
+      setNumMatchingCellsRef.current(0);
+      return;
+    }
     const visibleColumnIds = new Set(visibleColumns.map(col => col.id));
 
     const matches: SearchMatch[] = [];
@@ -158,7 +166,7 @@ export default function CurrentView({
     setNumMatchingCellsRef.current(matches.length);
   }, [allRows, matchingCells, matchingCellIds, visibleColumns]);
 
-  // Refetch when dependencies change
+  // Refetch when dependencies change - currently refetch function not rlly working
   useEffect(() => {
     if (viewId) {
       setHasInitialized(false);
@@ -170,40 +178,12 @@ export default function CurrentView({
   }, [viewId, JSON.stringify(sorts), JSON.stringify(filters), refetch]);
 
   // Mutations
-  const createRow = api.row.create.useMutation({
-    onSuccess: () => {
-      void refetch();
-    },
-  });
-  
-  const createColumn = api.column.create.useMutation({
-    onSuccess: () => {
-      void refetch();
-      void utils.table.getColumns.invalidate({ tableId });
-    }
-  });
-  
-  const createManyRows = api.row.createMany.useMutation({
-    onSuccess: () => {
-      void refetch();
-    },
-  });
-  
   const updateCell = api.table.updateCell.useMutation({
     onSuccess: () => {
       void refetch();
+      void utils.view.getViewRows.invalidate({ viewId });
     },
   });
-
-  const [columnDropdownIsOpen, setColumnDropdownIsOpen] = useState(false);
-  const [type, setType] = useState("");
-  const [columnName, setColumnName] = useState("");
-
-  const handleColumnDropdown = useCallback(() => {
-    setColumnDropdownIsOpen(!columnDropdownIsOpen);
-  }, [columnDropdownIsOpen]);
-
-
 
   const sortColumnIds = useMemo(() => 
     sorts?.map((sort) => sort.split(":")[0] ?? "") ?? [],
@@ -251,6 +231,12 @@ export default function CurrentView({
     }
   }, [currentMatchIndex, virtualizer]);
 
+  // Handle refetch callback
+  const handleRefetch = useCallback(() => {
+    setHasInitialized(false);
+    void refetch();
+  }, [refetch]);
+
   // Editable Cell component
   const EditableCell = React.memo(({
     initialValue,
@@ -274,8 +260,18 @@ export default function CurrentView({
     const [value, setValue] = useState(initialValue);
     const [originalValue, setOriginalValue] = useState(initialValue);
     
-    const regex = useMemo(() => {
-      return cell?.type === "text" ? /^[a-zA-Z]+$/ : /^\d+$/;
+    const isValidValue = useCallback((val: string) => {
+      if (val === "") return true;
+      
+      if (cell?.type === "text") {
+        return true;
+      }
+      
+      if (cell?.type === "number") {
+        return /^\d+$/.test(val);
+      }
+      
+      return true;
     }, [cell?.type]);
 
     useEffect(() => {
@@ -285,7 +281,7 @@ export default function CurrentView({
 
     const handleBlur = useCallback(() => {
       if (cell.cellId && originalValue !== value) {
-        if (regex.test(value)) {
+        if (isValidValue(value)) {
           updateCell.mutate({
             cellId: cell.cellId,
             value,
@@ -296,11 +292,29 @@ export default function CurrentView({
           setValue(originalValue);
         }
       }
-    }, [cell.cellId, cell.type, value, regex, originalValue, updateCell]);
+    }, [cell.cellId, cell.type, value, originalValue, isValidValue]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
     }, []);
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (cell?.type === "number") {
+        const allowedKeys = [
+          'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+          'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+        ];
+        
+        if (allowedKeys.includes(e.key) || 
+            e.ctrlKey || 
+            (e.key >= '0' && e.key <= '9')) { 
+          return;
+        }
+        
+        // Prevent all other characters
+        e.preventDefault();
+      }
+    }, [cell?.type]);
 
     return (
       <div className="flex items-center h-full">
@@ -321,6 +335,7 @@ export default function CurrentView({
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
         />
       </div>
     );
@@ -375,14 +390,6 @@ export default function CurrentView({
     [visibleColumns, matchingCellIds, searchMatches, currentMatchIndex, sortColumnIds, filterColumnIds]
   );
 
-  const handleCreateRow = useCallback(() => {
-    createRow.mutate({ tableId });
-  }, [createRow, tableId]);
-
-  const handleCreateManyRows = useCallback(() => {
-    createManyRows.mutate({ tableId });
-  }, [createManyRows, tableId]);
-
   // Table Creation
   const table = useReactTable({
     data: allRows,
@@ -390,19 +397,6 @@ export default function CurrentView({
     getCoreRowModel: getCoreRowModel(),
     enableColumnResizing: false,
   });
-
-  // Creating column
-  const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    setColumnDropdownIsOpen(false);
-    if (type === "text" || type === "number") {
-      createColumn.mutate({ tableId, type, name: columnName });
-    } else {
-      alert("Enter a valid type");
-    }
-    setType("");
-    setColumnName("");
-  }, [type, columnName, createColumn, tableId]);
 
   if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
@@ -446,7 +440,7 @@ export default function CurrentView({
                       <div className="inline-block">
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
-                      <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={() => refetch()}/>
+                      <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={handleRefetch}/>
                     </th>
                   ))}
                 </tr>
@@ -499,67 +493,18 @@ export default function CurrentView({
         
         {/* Create row/column section*/}
         <div className="flex flex-row">
-          <button
-            className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xl gap-2"
-            onClick={handleCreateRow}
-          >
-            Create Row
-          </button>
-          <div className="relative inline-block">
-            <button
-              onClick={handleColumnDropdown}
-              className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none border-l-2 border-gray-300 cursor-pointer text-xl gap-2"
-            >
-              Create Column
-            </button>
-            <div
-              className={`absolute left-0 bottom-full w-70 mb-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
-                columnDropdownIsOpen ? 'block' : 'hidden'
-              }`}
-            >
-              <ul className="py-1 text-sm text-gray-700">
-                <li>
-                  <form onSubmit={handleFormSubmit} className="flex flex-col gap-2">
-                    <input
-                      type="text"
-                      placeholder="Column Name"
-                      value={columnName}
-                      onChange={(e) => setColumnName(e.target.value)}
-                      className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Enter 'text' or 'number'"
-                      value={type}
-                      onChange={(e) => setType(e.target.value)}
-                      className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-md mb-4 bg-blue-400 text-white px-4 py-2 font-semibold transition hover:bg-blue-400 shadow cursor-pointer"
-                      disabled={createColumn.isPending}
-                    >
-                      {createColumn.isPending ? "Creating..." : "Create"}
-                    </button>
-                  </form>
-                </li>
-                <li>
-                  <button
-                    onClick={handleColumnDropdown}
-                    className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 border-1"
-                  >
-                    Close
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <button
-            className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-xl gap-2 border-l-2 border-gray-300"
-            onClick={handleCreateManyRows}
-          >
-            Create 100K Rows
-          </button>
+          <CreateRow 
+            tableId={tableId} 
+            viewId={viewId} 
+          />
+          <CreateColumn 
+            tableId={tableId} 
+            viewId={viewId} 
+          />
+          <CreateManyRows 
+            tableId={tableId} 
+            viewId={viewId} 
+          />
         </div>
       </div>
       {totalRows === 0 && !isLoading && <p className="mt-2 text-center">No rows available</p>}

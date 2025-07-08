@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 
-export default function CreateTable({ tableId }: { tableId: string }) {
+export default function CreateView({ tableId, isOpen, setOpen }: { tableId: string, isOpen: boolean, setOpen: (input: boolean) => void }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
-  const [isOpen, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
   const createView = api.table.createView.useMutation({
     onSuccess: async () => {
       await utils.table.invalidate();
@@ -14,13 +15,28 @@ export default function CreateTable({ tableId }: { tableId: string }) {
       setName("");
     },
   });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, setOpen]);
+
   const handleDropDown = () => {
     setOpen(!isOpen);
   };
 
   return (
     <div className="w-full max-w-xs">
-      <div className="relative inline-block">
+      <div className="relative inline-block" ref={dropdownRef}>
         <button
           onClick={handleDropDown}
           className="p-3 text-sm cursor-pointer pr-10 rounded-sm hover:bg-gray-100 bg-white"
@@ -31,7 +47,7 @@ export default function CreateTable({ tableId }: { tableId: string }) {
           </svg> */}
         </button>
         <div
-          className={`absolute left-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
+          className={`absolute left-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
             isOpen ? 'block' : 'hidden'
           }`}
         >

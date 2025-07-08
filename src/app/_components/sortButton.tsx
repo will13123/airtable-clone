@@ -70,13 +70,6 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
     setLocalSorts(formattedSorts);
   }, [sorts]);
 
-  const getSortedColumnNames = () => {
-    return formattedSorts
-      .map(sort => columns?.find(col => col.id === sort.columnId)?.name)
-      .filter(Boolean)
-      .join(', ');
-  };
-
   const availableSortOptions = newSort.type === "number" ? numberSortOptions : textSortOptions;
 
   const handleDropDown = () => {
