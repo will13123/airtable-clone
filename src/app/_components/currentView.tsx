@@ -50,7 +50,6 @@ const PREFETCH_THRESHOLD = 3000;
 export default function CurrentView({ 
   viewId, 
   tableId, 
-  hiddenColumns,
   currentMatchIndex,
   matchingCells,
   setNumMatchingCells,
@@ -58,13 +57,16 @@ export default function CurrentView({
 }: { 
   viewId: string, 
   tableId: string,
-  hiddenColumns: string[],
   searchTerm: string,
   currentMatchIndex: number,
   matchingCells: MatchingCell[],
   setNumMatchingCells: (value: number) => void,
 }) {
   const utils = api.useUtils();
+  const { data: hiddenColumns } = api.view.getHiddenColumns.useQuery(
+    { viewId },
+    { enabled: !!viewId }
+  );
   
   const [allColumns, setAllColumns] = useState<Array<{id: string; name: string; type: string}>>([]);
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -74,7 +76,6 @@ export default function CurrentView({
   // Use ref to store the setter to avoid adding it to useEffect dependencies
   const setNumMatchingCellsRef = useRef(setNumMatchingCells);
   
-  // Update ref when prop changes
   useEffect(() => {
     setNumMatchingCellsRef.current = setNumMatchingCells;
   }, [setNumMatchingCells]);
@@ -126,7 +127,7 @@ export default function CurrentView({
   );
 
   const visibleColumns = useMemo(() => 
-    allColumns.filter(column => !hiddenColumns.includes(column.id)),
+    allColumns.filter(column => !hiddenColumns?.includes(column.id)),
     [allColumns, hiddenColumns]
   );
 

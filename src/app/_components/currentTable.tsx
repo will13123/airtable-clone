@@ -15,6 +15,11 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const { data: currViewId } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
   const { data: tableColumns } = api.table.getColumns.useQuery({ tableId });
+  const { data: hiddenColumns } = api.view.getHiddenColumns.useQuery(
+    { viewId: currViewId ?? "" },
+    { enabled: !!currViewId }
+  );
+  
   const [isOpen, setOpen] = useState(false); // For the createView dropdown
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
@@ -22,11 +27,28 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     },
   });
   
+  const updateHiddenColumns = api.view.updateHiddenColumns.useMutation({
+    onSuccess: () => {
+      void utils.view.getHiddenColumns.invalidate({ viewId: currViewId ?? "" });
+    },
+  });
+  
+  const hideAll = api.view.hideAll.useMutation({
+    onSuccess: () => {
+      void utils.view.getHiddenColumns.invalidate({ viewId: currViewId ?? "" });
+    },
+  });
+  
+  const showAll = api.view.showAll.useMutation({
+    onSuccess: () => {
+      void utils.view.getHiddenColumns.invalidate({ viewId: currViewId ?? "" });
+    },
+  });
+  
   const currView = views?.find(v => v.id === currViewId);
   let name = currView?.name;
   const [currentViewIdState, setCurrentViewIdState] = useState<string>(currViewId ?? "");
   const [currentViewName, setCurrentViewName] = useState(name);
-  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [numSearchResults, setNumSearchResults] = useState(0);
@@ -49,19 +71,21 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   }, [matchingCells]);
 
   const handleToggleColumn = (columnId: string) => {
-    setHiddenColumns(prev => 
-      prev.includes(columnId) 
-        ? prev.filter(id => id !== columnId)
-        : [...prev, columnId]
-    );
+    if (currViewId) {
+      updateHiddenColumns.mutate({ viewId: currViewId, columnId });
+    }
   };
 
   const handleHideAll = () => {
-    setHiddenColumns(tableColumns ? tableColumns?.map(c => c.id) : []);
+    if (currViewId) {
+      hideAll.mutate({ viewId: currViewId });
+    }
   }
   
   const handleShowAll = () => {
-    setHiddenColumns([]);
+    if (currViewId) {
+      showAll.mutate({ viewId: currViewId });
+    }
   }
 
   const handleSearch = (search: string) => {
@@ -106,7 +130,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         <div className="flex flex-row justify-between items-center flex-2 gap-2">
           <HideButton 
             columns={tableColumns ?? []} 
-            hiddenColumns={hiddenColumns}
+            hiddenColumns={hiddenColumns ?? []}
             onToggleColumn={handleToggleColumn}
             onHideAll={handleHideAll}
             onShowAll={handleShowAll}
@@ -158,7 +182,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           <CurrentView 
             viewId={currViewId} 
             tableId={tableId}
-            hiddenColumns={hiddenColumns}
             searchTerm={searchTerm}
             currentMatchIndex={currentMatchIndex}
             matchingCells={matchingCells ?? []}

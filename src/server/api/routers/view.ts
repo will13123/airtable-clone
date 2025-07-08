@@ -32,15 +32,6 @@ function decodeCursor(cursor: string): CursorData | null {
 }
 
 export const viewRouter = createTRPCRouter({
-  getVisibleColumns: protectedProcedure
-    .input(z.object({ viewId: z.string() }))
-    .query(async ({ input }) => {
-      const view = await db.view.findUnique({
-        where: {id: input.viewId },
-      })
-      if (!view) return []
-      return view.visibleColumns;
-    }),
   
   getFilters: protectedProcedure
     .input(z.object({ viewId: z.string() }))
@@ -503,12 +494,12 @@ export const viewRouter = createTRPCRouter({
       viewId: z.string(),
       searchTerm: z.string()
     }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       if (!input.searchTerm.trim()) {
         return []; 
       }
 
-      const view = await ctx.db.view.findUnique({
+      const view = await db.view.findUnique({
         where: { id: input.viewId },
         select: { tableId: true }
       });
@@ -517,7 +508,7 @@ export const viewRouter = createTRPCRouter({
         throw new Error("View not found");
       }
 
-      const matchingCells = await ctx.db.cell.findMany({
+      const matchingCells = await db.cell.findMany({
         where: {
           row: {
             tableId: view.tableId
@@ -537,5 +528,86 @@ export const viewRouter = createTRPCRouter({
 
       return matchingCells;
     }),
+  getHiddenColumns: protectedProcedure
+    .input(z.object({ viewId: z.string() }))
+    .query(async ({ input }) => {
+      const { viewId } = input;
+      const view = await db.view.findUnique({
+        where: { id: viewId },
+      });
+      if (!view) return [];
+      return view.hiddenColumns as string[] ?? [];
+    }),
   
+  updateHiddenColumns: protectedProcedure
+  .input(z.object({ 
+    viewId: z.string(),
+    columnId: z.string()
+  }))
+  .mutation(async ({ input }) => {
+    const { viewId, columnId } = input;
+    
+    const view = await db.view.findUnique({
+      where: { id: viewId },
+      select: { hiddenColumns: true },
+    });
+    
+    if (!view) return
+    
+    const currentHidden = view.hiddenColumns as string[] ?? [];
+    const isCurrentlyHidden = currentHidden.includes(columnId);
+    
+    const newHiddenColumns = isCurrentlyHidden
+      ? currentHidden.filter(id => id !== columnId) 
+      : [...currentHidden, columnId];                 
+    
+    await db.view.update({
+      where: { id: viewId },
+      data: { hiddenColumns: newHiddenColumns },
+    });
+
+  }),
+
+  hideAll: protectedProcedure
+  .input(z.object({ 
+    viewId: z.string(),
+  }))
+  .mutation(async ({ input }) => {
+    const { viewId } = input;
+    
+    const view = await db.view.findUnique({
+      where: { id: viewId },
+    });
+    const table = await db.table.findUnique({
+      where: { id: view?.tableId },
+      select: { columns: true }
+    })
+    if (!table) return;
+    const columnIds = table.columns.map( c => c.id);
+    if (!view) return          
+    
+    await db.view.update({
+      where: { id: viewId },
+      data: { hiddenColumns: columnIds },
+    });
+  }),
+
+  showAll: protectedProcedure
+  .input(z.object({ 
+    viewId: z.string(),
+  }))
+  .mutation(async ({ input }) => {
+    const { viewId } = input;
+    
+    const view = await db.view.findUnique({
+      where: { id: viewId },
+    });
+    
+    if (!view) return          
+    
+    await db.view.update({
+      where: { id: viewId },
+      data: { hiddenColumns: [] },
+    });
+  }),
 });

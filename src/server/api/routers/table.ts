@@ -45,20 +45,12 @@ export const tableRouter = createTRPCRouter({
   createView: protectedProcedure
     .input(z.object({ tableId: z.string(), name: z.string() }))
     .mutation(async ({ input }) => {
-      const table = await db.table.findUnique({
-        where: {id: input.tableId },
-        include: {columns: true}
-      })
-      const defaultVisibleColumns = table?.columns.map((c) => {
-        return c.id
-      })
       const view = await db.view.create({
         data: {
           name: input.name,
           tableId: input.tableId,
           filters: [],
           sort: [],
-          visibleColumns: defaultVisibleColumns,
         },
       });
       return view;
