@@ -72,7 +72,6 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
     },
   });
 
-  // Default values
   const formattedSorts = sorts
     ? sorts.map((sort) => ({
         columnId: sort.split(":")[0] ?? "",
@@ -86,49 +85,74 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
 
   const availableSortOptions = newSort.type === "number" ? numberSortOptions : textSortOptions;
 
+  const isValidSort = (sort: {columnId: string, direction: string}) => {
+    return sort.columnId && sort.direction;
+  };
+
   const handleDropDown = () => {
     setOpen(!isOpen);
   };
 
   const handleSortChange = (sortIndex: number, field: 'columnId' | 'direction', value: string) => {
-    setLocalSorts(prev => prev.map((sort, index) => 
-      index === sortIndex ? { ...sort, [field]: value } : sort
-    ));
-  };
-
-  const handleSortBlur = (sortIndex: number) => {
-    const currentSort = localSorts[sortIndex];
-    if (!currentSort) return;
-
-    let updatedSort = { ...currentSort };
-    
-    if (!columns?.find(col => col.id === currentSort.columnId)) {
-      updatedSort = { ...updatedSort, direction: '' };
-    }
-
-    const isValidSort = updatedSort.columnId && updatedSort.direction;
-
-    if (isValidSort) {
-      const originalSort = sorts?.[sortIndex]; 
+    setLocalSorts(prev => {
+      const updated = prev.map((sort, index) => 
+        index === sortIndex ? { ...sort, [field]: value } : sort
+      );
       
-      updateSort.mutate({
-        viewId: viewId,
-        originalSort: originalSort, 
-        columnId: updatedSort.columnId,
-        direction: updatedSort.direction as "asc" | "desc",
-      });
+      const updatedSort = updated[sortIndex];
+      if (!updatedSort) return updated;
+
+      if (field === 'columnId' && !columns?.find(col => col.id === value)) {
+        updatedSort.direction = '';
+      }
+      
+      return updated;
+    });
+
+    const currentSort = localSorts[sortIndex];
+    if (currentSort) {
+      const updatedSort = { ...currentSort, [field]: value };
+      
+      if (field === 'columnId' && !columns?.find(col => col.id === value)) {
+        updatedSort.direction = '';
+      }
+
+      if (isValidSort(updatedSort)) {
+        const originalSort = sorts?.[sortIndex];
+        if (originalSort) {
+          updateSort.mutate({
+            viewId: viewId,
+            originalSort: originalSort, 
+            columnId: updatedSort.columnId,
+            direction: updatedSort.direction as "asc" | "desc",
+          });
+        }
+      }
     }
   };
 
-  const handleNewSortBlur = () => {
-    const isValidSort = newSort.columnId && newSort.direction;
+  const handleNewSortChange = (field: 'columnId' | 'direction' | 'type', value: string) => {
+    let updated = { ...newSort, [field]: value };
+    
+    if (field === 'columnId') {
+      const col = columns?.find((col) => col.id === value);
+      const colType = col ? col.type : "";
+      updated = { 
+        ...updated, 
+        direction: '',
+        type: colType
+      };
+    }
 
-    if (isValidSort) {
+    setNewSort(updated);
+
+    if (isValidSort(updated)) {
       updateSort.mutate({
         viewId: viewId,
-        columnId: newSort.columnId,
-        direction: newSort.direction as "asc" | "desc",
+        columnId: updated.columnId,
+        direction: updated.direction as "asc" | "desc",
       });
+      
       setNewSort({
         columnId: '',
         direction: '',
@@ -165,7 +189,6 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
         }`}
       >
         <div className="space-y-2">
-          {/* Existing Sorts */}
           {localSorts.map((sort, index) => {
             const foundCol = columns?.find(c => c.id === sort.columnId);
             const colType = foundCol?.type ?? '';
@@ -176,7 +199,6 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
                 <select
                   value={sort.columnId}
                   onChange={(e) => handleSortChange(index, 'columnId', e.target.value)}
-                  onBlur={() => handleSortBlur(index)}
                   className="flex-1 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                 >
                   {columns?.map((column) => (
@@ -189,7 +211,6 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
                 <select
                   value={sort.direction}
                   onChange={(e) => handleSortChange(index, 'direction', e.target.value)}
-                  onBlur={() => handleSortBlur(index)}
                   className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                 >
                   {sortOptionsForCol.map((option) => (
@@ -211,21 +232,10 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
             );
           })}
           
-          {/* New Sort Row */}
           <div className="flex items-center gap-1 border-t border-gray-100 pt-2">
             <select
               value={newSort.columnId}
-              onChange={(e) => {
-                const col = columns?.find((col) => col.id === e.target.value);
-                const colType = col ? col.type : "";
-                setNewSort(prev => ({ 
-                  ...prev, 
-                  columnId: e.target.value, 
-                  direction: '',
-                  type: colType
-                }));
-              }}
-              onBlur={handleNewSortBlur}
+              onChange={(e) => handleNewSortChange('columnId', e.target.value)}
               className="flex-1 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
             >
               <option value="">Field...</option>
@@ -238,13 +248,7 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
             
             <select
               value={newSort.direction}
-              onChange={(e) => {
-                setNewSort(prev => ({ 
-                  ...prev, 
-                  direction: e.target.value,
-                }));
-              }}
-              onBlur={handleNewSortBlur}
+              onChange={(e) => handleNewSortChange('direction', e.target.value)}
               className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
             >
               <option value="">Sort...</option>

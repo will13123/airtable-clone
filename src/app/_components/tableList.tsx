@@ -165,7 +165,7 @@ export default function TableList({ baseId }: { baseId: string }) {
                     
                     {/* Dropdown menu */}
                     {openDropdownId === table.id && (
-                      <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                      <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                         <button
                           onClick={() => startEditing(table.id, table.name)}
                           className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors duration-200 cursor-pointer"

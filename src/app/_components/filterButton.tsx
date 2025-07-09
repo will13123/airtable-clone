@@ -108,53 +108,96 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
     },
   });
 
+  const isValidFilter = (filter: {columnId: string, operator: string, value: string}) => {
+    return filter.columnId && filter.operator && 
+      (filter.value || ['is_empty', 'is_not_empty'].includes(filter.operator));
+  };
+
+  // This is for updating an existing filter
   const handleFilterChange = (filterIndex: number, field: 'columnId' | 'operator' | 'value', value: string) => {
-    setLocalFilters(prev => prev.map((filter, index) => 
-      index === filterIndex ? { ...filter, [field]: value } : filter
-    ));
-  };
-
-  const handleFilterBlur = (filterIndex: number) => {
-    const currentFilter = localFilters[filterIndex];
-    if (!currentFilter) return;
-
-    let updatedFilter = { ...currentFilter };
-    
-    if (!columns.find(col => col.id === currentFilter.columnId)) {
-      updatedFilter = { ...updatedFilter, operator: '', value: '' };
-    }
-    
-    if (['is_empty', 'is_not_empty'].includes(updatedFilter.operator)) {
-      updatedFilter = { ...updatedFilter, value: '' };
-    }
-
-    const isValidFilter = updatedFilter.columnId && updatedFilter.operator && 
-      (updatedFilter.value || ['is_empty', 'is_not_empty'].includes(updatedFilter.operator));
-
-    if (isValidFilter) {
-      const originalFilter = filters[filterIndex]; 
+    setLocalFilters(prev => {
+      const updated = prev.map((filter, index) => 
+        index === filterIndex ? { ...filter, [field]: value } : filter
+      );
       
-      updateFilter.mutate({
-        viewId: viewId,
-        originalFilter: originalFilter, 
-        columnId: updatedFilter.columnId,
-        operator: updatedFilter.operator,
-        value: updatedFilter.value,
-      });
+      const updatedFilter = updated[filterIndex];
+      if (!updatedFilter) return updated;
+
+      if (field === 'columnId' && !columns.find(col => col.id === value)) {
+        updatedFilter.operator = '';
+        updatedFilter.value = '';
+      }
+      
+      if (field === 'operator' && ['is_empty', 'is_not_empty'].includes(value)) {
+        updatedFilter.value = '';
+      }
+      
+      return updated;
+    });
+
+    const currentFilter = localFilters[filterIndex];
+    if (currentFilter) {
+      const updatedFilter = { ...currentFilter, [field]: value };
+      
+      if (field === 'columnId' && !columns.find(col => col.id === value)) {
+        updatedFilter.operator = '';
+        updatedFilter.value = '';
+      }
+      
+      if (field === 'operator' && ['is_empty', 'is_not_empty'].includes(value)) {
+        updatedFilter.value = '';
+      }
+
+      if (isValidFilter(updatedFilter)) {
+        const originalFilter = filters[filterIndex];
+        if (originalFilter) {
+          updateFilter.mutate({
+            viewId: viewId,
+            originalFilter: originalFilter, 
+            columnId: updatedFilter.columnId,
+            operator: updatedFilter.operator,
+            value: updatedFilter.value,
+          });
+        }
+      }
     }
   };
+  // This is for handling a new filter being added
+  const handleNewFilterChange = (field: 'columnId' | 'operator' | 'value' | 'type', value: string) => {
+    let updated = { ...newFilter, [field]: value };
+    
+    if (field === 'columnId') {
+      const col = columns.find((col) => col.id === value);
+      const colType = col ? col.type : "";
+      updated = { 
+        ...updated, 
+        operator: '', 
+        value: '',
+        type: colType
+      };
+    }
+    
+    if (field === 'operator') {
+      updated = { 
+        ...updated, 
+        value: '',
+      };
+    }
+    
+    if (['is_empty', 'is_not_empty'].includes(updated.operator)) {
+      updated.value = '';
+    }
 
-  const handleNewFilterBlur = () => {
-    const isValidFilter = newFilter.columnId && newFilter.operator && 
-      (newFilter.value || ['is_empty', 'is_not_empty'].includes(newFilter.operator));
+    setNewFilter(updated);
 
-    if (isValidFilter) {
+    if (isValidFilter(updated)) {
       updateFilter.mutate({
         viewId: viewId,
-        columnId: newFilter.columnId,
-        operator: newFilter.operator,
-        value: newFilter.value,
+        columnId: updated.columnId,
+        operator: updated.operator,
+        value: updated.value,
       });
+      
       setNewFilter({
         columnId: '',
         operator: '',
@@ -206,7 +249,6 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
                 <select
                   value={filter.columnId}
                   onChange={(e) => handleFilterChange(index, 'columnId', e.target.value)}
-                  onBlur={() => handleFilterBlur(index)}
                   className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                 >
                   <option value="">Column...</option>
@@ -220,7 +262,6 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
                 <select
                   value={filter.operator}
                   onChange={(e) => handleFilterChange(index, 'operator', e.target.value)}
-                  onBlur={() => handleFilterBlur(index)}
                   className="w-32 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                 >
                   <option value="">Operator...</option>
@@ -236,7 +277,6 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
                     type={colType}
                     value={filter.value}
                     onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
-                    onBlur={() => handleFilterBlur(index)}
                     placeholder="Value..."
                     className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                   />
@@ -258,18 +298,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
           <div className="flex items-center gap-1 border-t border-gray-100 pt-2">
             <select
               value={newFilter.columnId}
-              onChange={(e) => {
-                const col = columns.find((col) => col.id === e.target.value);
-                const colType = col ? col.type : "";
-                setNewFilter(prev => ({ 
-                  ...prev, 
-                  columnId: e.target.value, 
-                  operator: '', 
-                  value: '',
-                  type: colType
-                }));
-              }}
-              onBlur={handleNewFilterBlur}
+              onChange={(e) => handleNewFilterChange('columnId', e.target.value)}
               className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
             >
               <option value="">Field...</option>
@@ -282,14 +311,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
             
             <select
               value={newFilter.operator}
-              onChange={(e) => {
-                setNewFilter(prev => ({ 
-                  ...prev, 
-                  operator: e.target.value,
-                  value: '',
-                }));
-              }}
-              onBlur={handleNewFilterBlur}
+              onChange={(e) => handleNewFilterChange('operator', e.target.value)}
               className="w-32 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
             >
               <option value="">Operator...</option>
@@ -304,8 +326,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
               <input
                 type={newFilter.type}
                 value={newFilter.value}
-                onChange={(e) => setNewFilter(prev => ({ ...prev, value: e.target.value }))}
-                onBlur={handleNewFilterBlur}
+                onChange={(e) => handleNewFilterChange('value', e.target.value)}
                 placeholder="Value..."
                 className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
               />
