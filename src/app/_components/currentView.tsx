@@ -344,7 +344,14 @@ export default function CurrentView({
     return (
       <div className="flex items-center h-full">
         {isFirstColumn && (
-          <div className="text-center text-sm text-gray-400 w-[50px] flex-shrink-0">
+          <div className={`text-center text-sm text-gray-400 w-[50px] h-full flex-shrink-0 flex items-center justify-center ${
+            sortColumnIds?.includes(cell.columnId) ? "bg-orange-100" : ""
+          } ${
+            filterColumnIds?.includes(cell.columnId) ? "bg-green-100" : ""
+          } ${
+            isCurrentMatch ? "bg-yellow-300" : 
+            isHighlighted ? "bg-yellow-200" : ""
+          }`}>
             {rowNumber}
           </div>
         )}
@@ -447,28 +454,35 @@ export default function CurrentView({
             >
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b">
-                  {headerGroup.headers.map((header, index) => (
-                    <th
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className={`p-2 text-left text-sm border-r bg-white ${
-                        index === 0 ? 'sticky left-0 z-30' : ''
-                      }`}
-                      style={{
-                        width: "200px",
-                        minWidth: "200px",
-                        maxWidth: "200px",
-                        height: '45px'
-                      }}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="inline-block">
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                  {headerGroup.headers.map((header, index) => {
+                    const isSorted = sortColumnIds?.includes(header.column.id);
+                    const isFiltered = filterColumnIds?.includes(header.column.id);
+                    
+                    return (
+                      <th
+                        key={header.id}
+                        colSpan={header.colSpan}
+                        className={`p-2 text-left text-sm border-r ${
+                          index === 0 ? 'sticky left-0 z-30 pl-[58px]' : ''
+                        } ${
+                          isSorted ? "bg-orange-100" : isFiltered ? "bg-green-100" : "bg-white"
+                        }`}
+                        style={{
+                          width: "200px",
+                          minWidth: "200px",
+                          maxWidth: "200px",
+                          height: '45px'
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <div className="inline-block">
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                          </div>
+                          <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={handleRefetch}/>
                         </div>
-                        <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={handleRefetch}/>
-                      </div>
-                    </th>
-                  ))}
+                      </th>
+                    );
+                  })}
                 </tr>
               ))}
             </thead>
