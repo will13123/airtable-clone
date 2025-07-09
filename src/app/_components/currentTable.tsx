@@ -138,19 +138,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     setOpenDropdownId(null);
   };
 
-  const cancelEditing = () => {
-    setEditingViewId(null);
-    setEditingViewName("");
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent, viewId: string) => {
-    if (e.key === 'Enter') {
-      handleRenameView(viewId, editingViewName);
-    } else if (e.key === 'Escape') {
-      cancelEditing();
-    }
-  };
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -246,7 +233,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                       type="text"
                       value={editingViewName}
                       onChange={(e) => setEditingViewName(e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, view.id)}
                       onBlur={() => handleRenameView(view.id, editingViewName)}
                       className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                       autoFocus
@@ -296,20 +282,20 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                   <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                     <button
                       onClick={() => startEditing(view.id, view.name)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors duration-200"
+                      className="w-full cursor-pointer px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors duration-200"
                     >
-                      Rename
+                      Rename View
                     </button>
                     <button
                       onClick={() => handleDeleteView(view.id)}
                       disabled={views?.length === 1}
-                      className={`w-full px-3 py-2 text-left text-sm transition-colors duration-200 ${
+                      className={`w-full cursor-pointer px-3 py-2 text-left text-sm transition-colors duration-200 ${
                         views?.length === 1
                           ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-red-600 hover:bg-red-50'
+                          : 'text-red-600'
                       }`}
                     >
-                      Delete
+                      Delete View
                     </button>
                   </div>
                 )}

@@ -100,95 +100,95 @@ export const tableRouter = createTRPCRouter({
       });
     }),
   
-    getColumns: protectedProcedure
-      .input(z.object({ tableId: z.string() }))
-      .query(async ({ input }) => {
-        const table = await db.table.findUnique({
-        where: { id: input.tableId },
-        include: { columns: true }
+  getColumns: protectedProcedure
+    .input(z.object({ tableId: z.string() }))
+    .query(async ({ input }) => {
+      const table = await db.table.findUnique({
+      where: { id: input.tableId },
+      include: { columns: true }
+    });
+    if (!table) return [];
+    return table.columns;
+    }),
+
+  renameView: protectedProcedure
+    .input(
+      z.object({
+        viewId: z.string(),
+        name: z.string().min(1).max(100),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { viewId, name } = input;
+      
+      const existingView = await db.view.findUnique({
+        where: { id: viewId },
       });
-      if (!table) return [];
-      return table.columns;
-      }),
+      
+      if (!existingView) {
+        throw new Error("View not found");
+      }
+      
+      return await db.view.update({
+        where: { id: viewId },
+        data: { name },
+      });
+    }),
 
-    renameView: protectedProcedure
-      .input(
-        z.object({
-          viewId: z.string(),
-          name: z.string().min(1).max(100),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const { viewId, name } = input;
-        
-        const existingView = await db.view.findUnique({
-          where: { id: viewId },
+  deleteView: protectedProcedure
+    .input(
+      z.object({
+        viewId: z.string(),
+        tableId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { viewId, tableId } = input;
+      
+      const existingView = await db.view.findUnique({
+        where: { id: viewId },
+      });
+      
+      if (!existingView) {
+        throw new Error("View not found");
+      }
+      
+      const viewCount = await db.view.count({
+        where: { tableId },
+      });
+      
+      if (viewCount <= 1) {
+        throw new Error("Cannot delete the last view");
+      }
+      
+      // Check if this is the current view
+      const table = await db.table.findUnique({
+        where: { id: tableId },
+        select: { currView: true },
+      });
+      
+      if (table?.currView === viewId) {
+        const alternativeView = await db.view.findFirst({
+          where: { 
+            tableId,
+            id: { not: viewId }
+          },
+          orderBy: { createdAt: 'asc' },
         });
         
-        if (!existingView) {
-          throw new Error("View not found");
-        }
-        
-        return await db.view.update({
-          where: { id: viewId },
-          data: { name },
-        });
-      }),
-
-    deleteView: protectedProcedure
-      .input(
-        z.object({
-          viewId: z.string(),
-          tableId: z.string(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const { viewId, tableId } = input;
-        
-        const existingView = await db.view.findUnique({
-          where: { id: viewId },
-        });
-        
-        if (!existingView) {
-          throw new Error("View not found");
-        }
-        
-        const viewCount = await db.view.count({
-          where: { tableId },
-        });
-        
-        if (viewCount <= 1) {
-          throw new Error("Cannot delete the last view");
-        }
-        
-        // Check if this is the current view
-        const table = await db.table.findUnique({
-          where: { id: tableId },
-          select: { currView: true },
-        });
-        
-        if (table?.currView === viewId) {
-          const alternativeView = await db.view.findFirst({
-            where: { 
-              tableId,
-              id: { not: viewId }
-            },
-            orderBy: { createdAt: 'asc' },
+        if (alternativeView) {
+          await db.table.update({
+            where: { id: tableId },
+            data: { currView: alternativeView.id },
           });
-          
-          if (alternativeView) {
-            await db.table.update({
-              where: { id: tableId },
-              data: { currView: alternativeView.id },
-            });
-          }
         }
-        
-        await db.view.delete({
-          where: { id: viewId },
-        });
-        
-        return;
-      }),
+      }
+      
+      await db.view.delete({
+        where: { id: viewId },
+      });
+      
+      return;
+    }),
 });
 
