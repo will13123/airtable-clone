@@ -52,7 +52,7 @@ export default function CreateTable({ baseId }: { baseId: string }) {
       <div className="relative inline-block" ref={dropdownRef}>
         <button
           onClick={handleDropDown}
-          className="py-1 px-2 text-sm text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
+          className="mb-1 py-1 px-2 text-sm text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
         >
           <svg className="mr-1 mb-1 w-5 h-5 fill-current inline-block" viewBox="0 0 22 22">
             <use href="/icon_definitions.svg#Plus" />
@@ -118,14 +118,6 @@ export default function CreateTable({ baseId }: { baseId: string }) {
                   {createTable.isPending ? "Creating..." : "Create"}
                 </button>
               </form>
-            </li>
-            <li>
-              <button
-                onClick={handleDropDown}
-                className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 border-1"
-              >
-                Close
-              </button>
             </li>
           </ul>
         </div>

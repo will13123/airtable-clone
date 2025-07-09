@@ -81,14 +81,6 @@ export default function CreateView({ tableId, isOpen, setOpen }: { tableId: stri
                 </button>
               </form>
             </li>
-            <li>
-              <button
-                onClick={handleDropDown}
-                className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 border-1"
-              >
-                Close
-              </button>
-            </li>
           </ul>
         </div>
       </div>

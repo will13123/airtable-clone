@@ -233,7 +233,7 @@ export default function CurrentView({
     count: allRows.length,
     estimateSize: () => 45,
     getScrollElement: () => scrollRef.current,
-    overscan: 100,
+    overscan: 200,
     horizontal: false,
     measureElement: () => 45,
   });
