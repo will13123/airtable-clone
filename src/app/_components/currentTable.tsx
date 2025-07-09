@@ -21,8 +21,27 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   );
   
   const [isOpen, setOpen] = useState(false); // For the createView dropdown
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null); // For view dropdown menus
+  const [editingViewId, setEditingViewId] = useState<string | null>(null); // For renaming views
+  const [editingViewName, setEditingViewName] = useState<string>("");
+  
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
+      void utils.table.getCurrView.invalidate({ tableId });
+    },
+  });
+  
+  const renameView = api.table.renameView.useMutation({
+    onSuccess: () => {
+      void utils.table.getViews.invalidate({ tableId });
+      setEditingViewId(null);
+      setEditingViewName("");
+    },
+  });
+  
+  const deleteView = api.table.deleteView.useMutation({
+    onSuccess: () => {
+      void utils.table.getViews.invalidate({ tableId });
       void utils.table.getCurrView.invalidate({ tableId });
     },
   });
@@ -101,6 +120,51 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const handleRenameView = (viewId: string, newName: string) => {
+    if (newName.trim()) {
+      renameView.mutate({ viewId, name: newName.trim() });
+    }
+  };
+
+  const handleDeleteView = (viewId: string) => {
+    if (views && views.length > 1) {
+      deleteView.mutate({ viewId, tableId });
+    }
+  };
+
+  const startEditing = (viewId: string, currentName: string) => {
+    setEditingViewId(viewId);
+    setEditingViewName(currentName);
+    setOpenDropdownId(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingViewId(null);
+    setEditingViewName("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, viewId: string) => {
+    if (e.key === 'Enter') {
+      handleRenameView(viewId, editingViewName);
+    } else if (e.key === 'Escape') {
+      cancelEditing();
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId && !(event.target as Element).closest('.view-dropdown')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdownId]);
+
   useEffect(() => {
       if (views && earliestView && currViewId === "") {
         void setCurrView.mutate({ tableId, viewId: earliestView.id });
@@ -111,7 +175,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         setCurrentViewName(name);
       }
     }, [views, currViewId, currentViewIdState, earliestView]);
-
   return (
     <div className="flex flex-col h-full">
       {/* Top bar for table */}
@@ -176,28 +239,81 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             {views?.filter(view => 
               view.name.toLowerCase().includes(viewSearchTerm.toLowerCase())
             ).map((view) => (
-              <button
-                key={view.id}
-                className={`w-full p-3 text-sm cursor-pointer text-left whitespace-nowrap transition-colors duration-200 flex items-center ${
-                  currViewId === view.id
-                    ? 'bg-gray-100'
-                    : 'hover:bg-gray-100 bg-white'
-                }`}
-                onClick={() => {
-                  void setCurrView.mutate({ tableId, viewId: view.id });
-                  setCurrentViewIdState(view.id);
-                  setCurrentViewName(view.name);
-                  name = view.name;
-                  // Reset search when switching views
-                  setSearchTerm("");
-                  setCurrentMatchIndex(0);
-                }}
-              >
-                <svg className="w-4 h-4 mr-2 fill-blue-500 inline-block" viewBox="0 0 22 22">
-                  <use href="/icon_definitions.svg#GridFeature"/>
-                </svg>
-                {view.name}
-              </button>
+              <div key={view.id} className="relative view-dropdown">
+                {editingViewId === view.id ? (
+                  <div className="w-full p-2 bg-gray-100 rounded">
+                    <input
+                      type="text"
+                      value={editingViewName}
+                      onChange={(e) => setEditingViewName(e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, view.id)}
+                      onBlur={() => handleRenameView(view.id, editingViewName)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center group">
+                    <button
+                      className={`flex-1 p-3 text-sm cursor-pointer text-left whitespace-nowrap transition-colors duration-200 flex items-center ${
+                        currViewId === view.id
+                          ? 'bg-gray-100'
+                          : 'hover:bg-gray-100 bg-white'
+                      }`}
+                      onClick={() => {
+                        void setCurrView.mutate({ tableId, viewId: view.id });
+                        setCurrentViewIdState(view.id);
+                        setCurrentViewName(view.name);
+                        name = view.name;
+                        // Reset search when switching views
+                        setSearchTerm("");
+                        setCurrentMatchIndex(0);
+                      }}
+                    >
+                      <svg className="w-4 h-4 mr-2 fill-blue-500 inline-block" viewBox="0 0 22 22">
+                        <use href="/icon_definitions.svg#GridFeature"/>
+                      </svg>
+                      {view.name}
+                      <div className="flex-1"></div>
+                      <button
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded transition-opacity duration-200 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Doesnt change the current view as well
+                          setOpenDropdownId(openDropdownId === view.id ? null : view.id);
+                        }}
+                      >
+                        <svg className="w-4 h-4 mr-2 fill-gray-500 hover:fill-gray-600 inline-block" viewBox="0 0 22 22">
+                          <use href="/icon_definitions.svg#ChevronDown"/>
+                        </svg>
+                      </button>
+                    </button>
+                    
+                  </div>
+                )}
+                
+                {/* Dropdown menu */}
+                {openDropdownId === view.id && (
+                  <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <button
+                      onClick={() => startEditing(view.id, view.name)}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors duration-200"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      onClick={() => handleDeleteView(view.id)}
+                      disabled={views?.length === 1}
+                      className={`w-full px-3 py-2 text-left text-sm transition-colors duration-200 ${
+                        views?.length === 1
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-red-600 hover:bg-red-50'
+                      }`}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>            
         </div>
