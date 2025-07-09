@@ -52,6 +52,33 @@ type InfiniteQueryData = {
   pageParams: (string | undefined)[];
 }
 
+const validateCellValue = (value: string, type: string): boolean => {
+  if (value === "") return true;
+  
+  if (type === "text") {
+    return true;
+  }
+  
+  if (type === "number") {
+    return /^\d+$/.test(value);
+  }
+  
+  return true;
+};
+
+const keyAllowed = (key: string, ctrlKey: boolean): boolean => {
+  const allowedKeys = [
+    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+    'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+  ];
+  
+  return allowedKeys.includes(key) || 
+    ctrlKey || 
+    (key >= '0' && key <= '9');
+};
+
+// Helper functions
+
 const columnHelper = createColumnHelper<RowType>();
 
 // Configuration
@@ -64,32 +91,20 @@ export default function CurrentView({
   currentMatchIndex,
   matchingCells,
   setNumMatchingCells,
-  searchTerm
 }: { 
   viewId: string, 
   tableId: string,
-  searchTerm: string,
   currentMatchIndex: number,
   matchingCells: MatchingCell[],
   setNumMatchingCells: (value: number) => void,
 }) {
   const utils = api.useUtils();
-  const { data: hiddenColumns } = api.view.getHiddenColumns.useQuery(
-    { viewId },
-    { enabled: !!viewId }
-  );
+  const { data: hiddenColumns } = api.view.getHiddenColumns.useQuery({ viewId });
   
   const [allColumns, setAllColumns] = useState<Array<{id: string; name: string; type: string}>>([]);
   const [hasInitialized, setHasInitialised] = useState(false);
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
   const queryClient = useQueryClient();
-  
-  // Use ref to store the setter to avoid adding it to useEffect dependencies
-  const setNumMatchingCellsRef = useRef(setNumMatchingCells);
-  
-  useEffect(() => {
-    setNumMatchingCellsRef.current = setNumMatchingCells;
-  }, [setNumMatchingCells]);
   
   // Infinite query for cursor-based pagination
   const {
@@ -98,7 +113,6 @@ export default function CurrentView({
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    refetch,
   } = useInfiniteQuery({
     queryKey: ['viewRows', viewId],
     queryFn: async ({ pageParam }) => {
@@ -126,8 +140,6 @@ export default function CurrentView({
     return paginatedData?.pages.flatMap(page => page?.rows ?? []) ?? [];
   }, [paginatedData]);
 
-  const totalRows = allRows.length;
-
   const { data: sorts } = api.view.getSorts.useQuery({ viewId });
   const { data: filters } = api.view.getFilters.useQuery({ viewId });
 
@@ -146,19 +158,14 @@ export default function CurrentView({
   useEffect(() => {
     if (!matchingCells.length || !allRows.length) {
       setSearchMatches([]);
-      setNumMatchingCellsRef.current(0);
-      return;
-    }
-    if (searchTerm.length === 0) {
-      setSearchMatches([]);
-      setNumMatchingCellsRef.current(0);
+      setNumMatchingCells(0);
       return;
     }
     const visibleColumnIds = new Set(visibleColumns.map(col => col.id));
 
     const matches: SearchMatch[] = [];
     
-    // Iterate through rows and check each cell
+    // Iterate through rows and check each cell- may be slow
     allRows.forEach((row, rowIndex) => {
       row.cells.forEach((cell) => {
         if (cell.cellId && 
@@ -175,44 +182,31 @@ export default function CurrentView({
     });
 
     setSearchMatches(matches);
-    setNumMatchingCellsRef.current(matches.length);
-  }, [allRows, matchingCells, matchingCellIds, visibleColumns]);
+    setNumMatchingCells(matches.length);
+  }, [allRows, matchingCells, matchingCellIds, visibleColumns, setNumMatchingCells]);
 
-  // Refetch when dependencies change - currently refetch function not rlly working
-  useEffect(() => {
-    if (viewId) {
-      setHasInitialised(false);
-      void refetch();
-      void queryClient.invalidateQueries({ 
-        queryKey: ['viewRows', viewId] 
-      })
-    }
-  }, [viewId, JSON.stringify(sorts), JSON.stringify(filters), refetch]);
-
-  // Mutations
   const updateCell = api.table.updateCell.useMutation({
     onSuccess: (data, variables: { cellId: string; value: string }) => {
-    // Update the cache after successful cell edit to keep changes
-    queryClient.setQueryData<InfiniteQueryData>(['viewRows', viewId], (oldData) => {
-      if (!oldData?.pages) return oldData;
-      
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: PageData) => ({
-          ...page,
-          rows: page.rows.map((row: RowType) => ({
-            ...row,
-            cells: row.cells.map((cell: CellType) => 
-              cell.cellId === variables.cellId 
-                ? { ...cell, value: variables.value }
-                : cell
-            )
+      // Update the cache after successful cell edit to keep changes
+      queryClient.setQueryData<InfiniteQueryData>(['viewRows', viewId], (oldData) => {
+        if (!oldData?.pages) return oldData;
+        
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: PageData) => ({
+            ...page,
+            rows: page.rows.map((row: RowType) => ({
+              ...row,
+              cells: row.cells.map((cell: CellType) => 
+                cell.cellId === variables.cellId 
+                  ? { ...cell, value: variables.value }
+                  : cell
+              )
+            }))
           }))
-        }))
-      };
-    });
-  },
-
+        };
+      });
+    },
   });
 
   const sortColumnIds = useMemo(() => 
@@ -225,10 +219,18 @@ export default function CurrentView({
     [filters]
   );
 
+  const handleCellUpdate = useCallback((cellId: string, value: string, type: string) => {
+    if (validateCellValue(value, type)) {
+      updateCell.mutate({ cellId, value });
+    } else {
+      alert(`Please input only ${type === "text" ? "letters" : "numbers"}`);
+    }
+  }, [updateCell]);
+
   // Tanstack Virtualization
   const scrollRef = useRef<HTMLTableSectionElement>(null);
   const virtualizer = useVirtualizer({
-    count: totalRows,
+    count: allRows.length,
     estimateSize: () => 45,
     getScrollElement: () => scrollRef.current,
     overscan: 100,
@@ -243,10 +245,10 @@ export default function CurrentView({
     if (!hasNextPage || isFetchingNextPage) return;
 
     const lastVirtualRow = virtualRows[virtualRows.length - 1];
-    if (lastVirtualRow && lastVirtualRow.index >= totalRows - PREFETCH_THRESHOLD) {
+    if (lastVirtualRow && lastVirtualRow.index >= allRows.length - PREFETCH_THRESHOLD) {
       void fetchNextPage();
     }
-  }, [virtualRows, totalRows, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [virtualRows, allRows.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Scroll to current match when it changes
   useEffect(() => {
@@ -259,13 +261,7 @@ export default function CurrentView({
         });
       }
     }
-  }, [currentMatchIndex, virtualizer]);
-
-  // Handle refetch callback
-  const handleRefetch = useCallback(() => {
-    setHasInitialised(false);
-    void refetch();
-  }, [refetch]);
+  }, [currentMatchIndex, searchMatches, virtualizer]);
 
   // Editable Cell component
   const EditableCell = React.memo(({
@@ -285,23 +281,9 @@ export default function CurrentView({
     isHighlighted?: boolean;
     isCurrentMatch?: boolean;
     sortColumnIds?: string[];
-    filterColumnIds?: string[];    
+    filterColumnIds?: string[];
   }) => {
     const [value, setValue] = useState(initialValue);
-    
-    const isValidValue = useCallback((val: string) => {
-      if (val === "") return true;
-      
-      if (cell?.type === "text") {
-        return true;
-      }
-      
-      if (cell?.type === "number") {
-        return /^\d+$/.test(val);
-      }
-      
-      return true;
-    }, [cell?.type]);
 
     useEffect(() => {
       setValue(initialValue);
@@ -309,16 +291,9 @@ export default function CurrentView({
 
     const handleBlur = useCallback(() => {
       if (cell.cellId) {
-        if (isValidValue(value)) {
-          updateCell.mutate({
-            cellId: cell.cellId,
-            value,
-          });
-        } else {
-          alert(`Please input only ${cell.type === "text" ? "letters" : "numbers"}`);
-        }
+        handleCellUpdate(cell.cellId, value, cell.type);
       }
-    }, [cell.cellId, cell.type, value, isValidValue]);
+    }, [cell.cellId, cell.type, value]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
@@ -326,21 +301,12 @@ export default function CurrentView({
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
       if (cell?.type === "number") {
-        const allowedKeys = [
-          'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-          'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-        ];
-        
-        if (allowedKeys.includes(e.key) || 
-            e.ctrlKey || 
-            (e.key >= '0' && e.key <= '9')) { 
-          return;
+        if (!keyAllowed(e.key, e.ctrlKey)) {
+          e.preventDefault();
         }
-        
-        // Prevent all other characters
-        e.preventDefault();
       }
     }, [cell?.type]);
+
     return (
       <div className="flex items-center h-full">
         {isFirstColumn && (
@@ -398,9 +364,10 @@ export default function CurrentView({
               const rowNumber = info.row.index + 1;
               const isHighlighted = matchingCellIds.has(cell?.cellId ?? "");
               
-              // Check if this is the current match using our search index
+              // Check if this is the current match using search index
               const currentMatch = searchMatches[currentMatchIndex];
               const isCurrentMatch = currentMatch ? currentMatch?.cellId === cell?.cellId : false;
+              
               return (
                 <EditableCell
                   initialValue={initialValue}
@@ -418,7 +385,7 @@ export default function CurrentView({
         )
       ),
     ],
-    [visibleColumns, matchingCellIds, searchMatches, currentMatchIndex, sortColumnIds, filterColumnIds]
+    [visibleColumns, matchingCellIds, searchMatches, currentMatchIndex, EditableCell, sortColumnIds, filterColumnIds, handleCellUpdate]
   );
 
   // Table Creation
@@ -478,7 +445,7 @@ export default function CurrentView({
                           <div className="inline-block">
                             {flexRender(header.column.columnDef.header, header.getContext())}
                           </div>
-                          <EditColumn columnId={header.column.id} viewId={viewId} onUpdate={handleRefetch}/>
+                          <EditColumn columnId={header.column.id} viewId={viewId}/>
                         </div>
                       </th>
                     );
@@ -548,7 +515,7 @@ export default function CurrentView({
           />
         </div>
       </div>
-      {totalRows === 0 && !isLoading && <p className="mt-2 text-center">No rows available</p>}
+      {allRows.length === 0 && !isLoading && <p className="mt-2 text-center">No rows available</p>}
     </div>
   );
 }

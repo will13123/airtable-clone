@@ -75,11 +75,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Search for matching cells
-  const { data: matchingCells } = api.view.searchCells.useQuery(
-    { viewId: currViewId ?? "", searchTerm },
-    { enabled: !!searchTerm.trim() && !!currViewId }
-  );
-
+  let { data: matchingCells } = api.view.searchCells.useQuery({ viewId: currViewId ?? "", searchTerm });
+  if (searchTerm.length === 0) matchingCells = [];
   // Pass in num of search results
   const handleSetNumSearchResults = useCallback((value: number) => {
     setNumSearchResults(value);
@@ -308,7 +305,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           <CurrentView 
             viewId={currViewId} 
             tableId={tableId}
-            searchTerm={searchTerm}
             currentMatchIndex={currentMatchIndex}
             matchingCells={matchingCells ?? []}
             setNumMatchingCells={handleSetNumSearchResults}

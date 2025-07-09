@@ -96,7 +96,7 @@ export default function Sidebar({ userId, isExpanded }: { userId: string, isExpa
 
             <div className="bg-white rounded-lg border border-neutral-200 p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer">
               <div className="flex items-center mb-3">
-                <svg className="mr-2 w-5 h-5 text-orange-600 fill-current" viewBox="0 0 22 22">
+                <svg className="mr-2 w-5 h-5 text-blue-600 fill-current" viewBox="0 0 22 22">
                   <use href="/icon_definitions.svg#Table"/>
                 </svg>
                 <h3 className="text-lg font-semibold text-gray-800">Build an app on your own</h3>

@@ -7,11 +7,9 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function EditColumn({ 
   columnId, 
   viewId, 
-  onUpdate 
 }: { 
   columnId: string; 
   viewId: string;
-  onUpdate: () => void;
 }) {
   const utils = api.useUtils();
   const queryClient = useQueryClient();
