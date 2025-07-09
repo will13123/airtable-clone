@@ -87,7 +87,7 @@ export default function TableList({ baseId }: { baseId: string }) {
     } else {
       setCurrentTableIdState(currentTableIdState);
     }
-  }, [tables, currTableId, currentTableIdState, earliestTable]);
+  }, [tables, currTableId, currentTableIdState, earliestTable, utils.base.earliestTable, baseId, setCurrTable]);
 
   // Update local state when currTableId changes
   useEffect(() => {

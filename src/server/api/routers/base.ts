@@ -53,7 +53,7 @@ export const baseRouter = createTRPCRouter({
 
   setCurrTable: protectedProcedure
     .input(z.object({ baseId: z.string(), tableId: z.string() }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       const table = await db.table.findUnique({
         where: { id: input.tableId, baseId: input.baseId },
       });

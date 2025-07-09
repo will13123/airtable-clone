@@ -385,7 +385,7 @@ export default function CurrentView({
         )
       ),
     ],
-    [visibleColumns, matchingCellIds, searchMatches, currentMatchIndex, EditableCell, sortColumnIds, filterColumnIds, handleCellUpdate]
+    [visibleColumns, matchingCellIds, searchMatches, currentMatchIndex, EditableCell, sortColumnIds, filterColumnIds]
   );
 
   // Table Creation

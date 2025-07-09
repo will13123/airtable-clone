@@ -65,7 +65,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
         operator: filter.split(":")[1] ?? "",
         value: filter.split(":")[2] ?? ""
       }))
-    : []
+    : [];
 
   useEffect(() => {
     setLocalFilters(formattedFilters);

@@ -72,14 +72,13 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
     },
   });
 
-  const formattedSorts = sorts
+  useEffect(() => {
+    const formattedSorts = sorts
     ? sorts.map((sort) => ({
         columnId: sort.split(":")[0] ?? "",
         direction: sort.split(":")[1] ?? ""
       }))
     : [];
-
-  useEffect(() => {
     setLocalSorts(formattedSorts);
   }, [sorts]);
 

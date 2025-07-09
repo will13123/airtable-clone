@@ -248,7 +248,7 @@ export const viewRouter = createTRPCRouter({
 
     const combinedWhereClause = allWhereClauses.join(' AND ');
 
-    // Enhanced sort query that also selects the sort values for cursor creation
+    // Sort query that also selects the sort values for cursor creation
     const sortValueSelects = sortOrders.map((sort) => {
       const alias = columnAliasMap.get(sort.columnId);
       return `${alias}.value as sort_${sort.columnId}`;
@@ -273,7 +273,7 @@ export const viewRouter = createTRPCRouter({
     const hasNextPage = sortedRowIds.length > input.limit;
     const rowsToReturn = hasNextPage ? sortedRowIds.slice(0, input.limit) : sortedRowIds;
     
-    // Create enhanced cursor with sort values
+    // Create cursor with sort values
     let nextCursor: string | null = null;
     if (hasNextPage && rowsToReturn.length > 0) {
       const lastRow = rowsToReturn[rowsToReturn.length - 1];
@@ -301,7 +301,7 @@ export const viewRouter = createTRPCRouter({
 
     const rowIds = rowsToReturn.map(row => `'${row.id}'`).join(',');
     
-    // Modified data query to maintain the sorted order with pagination
+    // Modified data query to grab all necessary fields
     const dataQuery = `
       SELECT 
         r.id,
@@ -334,7 +334,6 @@ export const viewRouter = createTRPCRouter({
       }[] 
     }[] = await db.$queryRawUnsafe(dataQuery);
 
-    // Create a map for efficient lookup
     const rowsMap = new Map(rawRows.map(row => [row.id, row]));
     
     const rows: RowResponse[] = rowsToReturn.map(({ id }) => {
