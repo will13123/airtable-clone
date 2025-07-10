@@ -122,7 +122,7 @@ export default function TableList({ baseId }: { baseId: string }) {
       {tables.length > 0 && (
         <div className="flex flex-col h-full">
           <div className="relative bg-pink-50 border-b border-gray-200 h-[4vh]">
-            <div className="flex items-end relative">
+            <div className="flex items-end relative h-full">
               {tables.map((table, index) => {
                 const elements = [];
                 
