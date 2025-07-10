@@ -175,11 +175,7 @@ export default function TableList({ baseId }: { baseId: string }) {
                         <button
                           onClick={() => handleDeleteTable(table.id)}
                           disabled={tables?.length === 1}
-                          className={`w-full cursor-pointer px-3 py-2 text-left text-sm transition-colors duration-200 ${
-                            tables?.length === 1
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-red-600'
-                          }`}
+                          className={`w-full cursor-pointer px-3 py-2 text-left text-sm transition-colors duration-200 text-gray-600`}
                         >
                           Delete Table
                         </button>

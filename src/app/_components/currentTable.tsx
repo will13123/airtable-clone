@@ -291,7 +291,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                       className={`w-full cursor-pointer px-3 py-2 text-left text-sm transition-colors duration-200 ${
                         views?.length === 1
                           ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-red-600'
+                          : 'text-gray-600'
                       }`}
                     >
                       Delete View

@@ -15,7 +15,7 @@ export default function Dropdown({profileImage, name, email}: DropdownProps) {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="focus:outline-none"
+        className="focus:outline-none cursor-pointer"
       >
         <img
           src={profileImage}

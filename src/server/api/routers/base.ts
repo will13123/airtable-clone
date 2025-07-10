@@ -105,14 +105,6 @@ export const baseRouter = createTRPCRouter({
         throw new Error("Table not found");
       }
       
-      const tableCount = await db.table.count({
-        where: { baseId },
-      });
-      
-      if (tableCount <= 1) {
-        throw new Error("Cannot delete the last table");
-      }
-      
       // Check if this is the current table
       const base = await db.base.findUnique({
         where: { id: baseId },
@@ -128,12 +120,11 @@ export const baseRouter = createTRPCRouter({
           orderBy: { createdAt: 'asc' },
         });
         
-        if (alternativeTable) {
-          await db.base.update({
-            where: { id: baseId },
-            data: { currTable: alternativeTable.id },
-          });
-        }
+        await db.base.update({
+          where: { id: baseId },
+          data: { currTable: alternativeTable?.id },
+        });
+        
       }
       
       await db.table.delete({
@@ -141,4 +132,37 @@ export const baseRouter = createTRPCRouter({
       });
       return;
     }),
+  
+  rename: protectedProcedure
+    .input(z.object({ baseId: z.string(), name: z.string() }))
+    .mutation(async ({ input }) => {
+      const { baseId, name } = input;
+      const base = await db.base.findUnique({
+        where: { id: baseId }
+      });
+      if (!base) {
+        throw new Error("Base not found");
+      }
+      const updatedBase = await db.base.update({
+        where: { id: baseId },
+        data: { name: name },
+      })
+      return updatedBase;
+    }),
+    
+  delete: protectedProcedure
+  .input(z.object({ baseId: z.string() }))
+  .mutation(async ({ input }) => {
+    const { baseId } = input;
+    const base = await db.base.findUnique({
+      where: { id: baseId }
+    });
+    if (!base) {
+      throw new Error("Base not found");
+    }
+    const deletedBase = await db.base.delete({
+      where: { id: baseId },
+    });
+    return deletedBase;
+  })
 });
