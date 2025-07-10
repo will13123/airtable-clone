@@ -14,17 +14,17 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
   if (!id) return <div className="text-gray-600 text-xl">Error loading base</div>
   return (
     <div className="flex h-full">
-        <div className="w-[4%] bg-white flex-shrink-0 flex-col justify-between border-gray-200 border-r">
+        <div className="w-[3.5%] bg-white flex-shrink-0 flex-col justify-between border-gray-200 border-r">
           <div className="p-2 pt-4 flex items-center justify-center">
-            <svg className="w-5 h-5 fill-current text-gray-700" viewBox="0 0 22 22">
+            <svg className="w-6 h-6 fill-current text-gray-700" viewBox="0 0 22 22">
               <use href="/icon_definitions.svg#Airtable"/>
             </svg>
           </div>            
         </div>
         {/* Main Section */}
-        <div className="flex-1 w-[96%]"> 
+        <div className="flex-1 w-[96.5%] flex-col"> 
           {/* Top bar */}
-          <header className="flex justify-center items-center bg-white border-b border-gray-200 p-3">
+          <header className="flex justify-center items-center bg-white border-b border-gray-200 p-3 h-[6%]">
             <div className="flex flex-1 justify-start items-center gap-2">
               <Image
                 src="/airtable-logo.webp" 

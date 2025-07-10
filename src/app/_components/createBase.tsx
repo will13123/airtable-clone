@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 
-export default function CreateBase() {
+export default function CreateBase({ isExpanded }: { isExpanded: boolean }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -45,15 +45,22 @@ export default function CreateBase() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center justify-center w-8 h-8 cursor-pointer hover:bg-gray-100 rounded transition-colors duration-200"
+        className={`flex items-center cursor-pointer hover:bg-gray-100 rounded transition-colors duration-200 ${
+          !isExpanded ? 'justify-center w-8 h-8' : 'w-full p-2'
+        }`}
       >
-        <svg className="w-5 h-5 fill-gray-600" viewBox="0 0 22 22">
+        <svg className="w-5 h-5 fill-gray-600 flex-shrink-0" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#Plus"/>
         </svg>
+        {isExpanded && (
+          <span className="ml-3 text-sm whitespace-nowrap">
+            Create Base
+          </span>
+        )}
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute top-full mt-2 left-0 w-64 bg-white border border-neutral-200 rounded-lg shadow-lg z-10 p-4">
+        <div className="absolute bottom-full mb-2 left-0 w-64 bg-white border border-neutral-200 rounded-lg shadow-lg z-20 p-4">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <input
               type="text"

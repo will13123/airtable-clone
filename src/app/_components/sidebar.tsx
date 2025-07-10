@@ -1,64 +1,76 @@
 "use client";
 
 import BaseList from './baseList';
+import CreateBase from './createBase';
 
-export default function Sidebar({ userId, isExpanded }: { userId: string, isExpanded: boolean}) {
+export default function Sidebar({ userId, isExpanded, setIsExpanded }: { userId: string, isExpanded: boolean, setIsExpanded: (input: boolean) => void}) {
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-[93%] bg-gray-100 relative">
       {/* Sidebar */}
-      <div className={`sidebar-panel fixed top-[64px] left-0 h-full bg-white transition-all duration-200 ease-in-out z-10 border-r-1 border border-neutral-200 overflow-hidden ${
+      <div className={`sidebar-panel absolute top-0 left-0 h-full bg-white transition-all duration-200 ease-in-out z-10 border-r border-neutral-200 overflow-hidden ${
         isExpanded ? 'w-72' : 'w-13'
-      }`}>
+      }`}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+      >
         
-        <div className="p-4 items-left content-left flex flex-col">
-          <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
-            <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
-              <use href="/icon_definitions.svg#House"/>
-            </svg>
-            {isExpanded && (
-              <span className="ml-3 text-sm whitespace-nowrap">
-                Home
-              </span>
-            )}
+        <div className="p-4 items-left content-left flex flex-col h-full">
+          <div className="flex-1">
+            <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
+              <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
+                <use href="/icon_definitions.svg#House"/>
+              </svg>
+              {isExpanded && (
+                <span className="ml-3 text-sm whitespace-nowrap">
+                  Home
+                </span>
+              )}
+            </div>
+            <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
+              <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
+                <use href="/icon_definitions.svg#Star"/>
+              </svg>
+              {isExpanded && (
+                <span className="ml-3 text-sm whitespace-nowrap">
+                  Starred
+                </span>
+              )}
+            </div>
+            <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
+              <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
+                <use href="/icon_definitions.svg#Share"/>
+              </svg>
+              {isExpanded && (
+                <span className="ml-3 text-sm whitespace-nowrap">
+                  Shared
+                </span>
+              )}
+            </div>
+            <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
+              <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
+                <use href="/icon_definitions.svg#UsersThree"/>
+              </svg>
+              {isExpanded && (
+                <span className="ml-3 text-sm whitespace-nowrap">
+                  Workspaces
+                </span>
+              )}
+            </div>
           </div>
-          <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
-            <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
-              <use href="/icon_definitions.svg#Star"/>
-            </svg>
-            {isExpanded && (
-              <span className="ml-3 text-sm whitespace-nowrap">
-                Starred
-              </span>
-            )}
-          </div>
-          <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
-            <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
-              <use href="/icon_definitions.svg#Share"/>
-            </svg>
-            {isExpanded && (
-              <span className="ml-3 text-sm whitespace-nowrap">
-                Shared
-              </span>
-            )}
-          </div>
-          <div className={`flex items-center mb-3 ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
-            <svg className="w-6 h-6 fill-current inline-block flex-shrink-0" viewBox="0 0 22 22">
-              <use href="/icon_definitions.svg#UsersThree"/>
-            </svg>
-            {isExpanded && (
-              <span className="ml-3 text-sm whitespace-nowrap">
-                Workspaces
-              </span>
-            )}
+          
+          <div className="mt-auto">
+            <div className={`flex items-center ${!isExpanded ? 'justify-center' : 'pl-1'}`}>
+              <CreateBase isExpanded={isExpanded}/>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className={`main-content flex-1 transition-all duration-200 ease-in-out ${
+      <div className={`h-full flex-1 transition-all duration-200 ease-in-out ${
         isExpanded ? 'ml-72' : 'ml-13'
       }`}>
-        <main className="flex min-h-screen flex-col bg-neutral-50 text-black p-6 flex-1">
+        <main className="flex h-full flex-col bg-neutral-50 text-black p-6 flex-1">
           <h1 className="text-3xl font-bold mb-6">Home</h1>
           
           {/* Starting Cards */}

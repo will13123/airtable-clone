@@ -21,8 +21,8 @@ export default function DashboardWrapper({ name, profileImage, email, userId }: 
   };
 
   return (
-    <div className="bg-neutral-300">
-      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-2 pl-3 z-50">
+    <div className="bg-neutral-300 h-full">
+      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-2 pl-3 z-50 h-[7%]">
         <div className="flex flex-1 justify-start items-center gap-2 cursor-pointer">
           <ToggleButton onToggle={toggleSidebar} />
           <Image
@@ -43,7 +43,7 @@ export default function DashboardWrapper({ name, profileImage, email, userId }: 
           <Dropdown profileImage={profileImage} name={name} email={email}/>
         </div>
       </header>
-      <Sidebar userId={userId} isExpanded={isSidebarExpanded} />
+      <Sidebar userId={userId} isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} />
     </div>
   );
 }
