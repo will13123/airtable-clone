@@ -29,6 +29,7 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
   });
 
   const [localSorts, setLocalSorts] = useState<Array<{columnId: string, direction: string}>>([]);
+  const [showNewSortRow, setShowNewSortRow] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -157,6 +158,7 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
         direction: '',
         type: '',
       });
+      setShowNewSortRow(false);
     }
   };
 
@@ -168,6 +170,10 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
         columnId: sort.columnId,
       });
     }
+  };
+
+  const handleAddAnotherSort = () => {
+    setShowNewSortRow(true);
   };
 
   return (
@@ -183,11 +189,16 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
       </button>
       
       <div
-        className={`absolute right-0 w-80 mt-2 p-2 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
+        className={`absolute right-0 w-80 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
           isOpen ? 'block' : 'hidden'
         }`}
       >
-        <div className="space-y-2">
+        <div className="space-y-3">
+          <div className="text-sm font-medium text-gray-700 border-b border-gray-100 pb-2">
+            Sort By
+          </div>
+          
+          {/* Existing sorts */}
           {localSorts.map((sort, index) => {
             const foundCol = columns?.find(c => c.id === sort.columnId);
             const colType = foundCol?.type ?? '';
@@ -231,33 +242,47 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
             );
           })}
           
-          <div className="flex items-center gap-1 border-t border-gray-100 pt-2">
-            <select
-              value={newSort.columnId}
-              onChange={(e) => handleNewSortChange('columnId', e.target.value)}
-              className="flex-1 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+          {/* New sort row (only shown when showNewSortRow is true) */}
+          {showNewSortRow && (
+            <div className="flex items-center gap-1 border-t border-gray-100 pt-2">
+              <select
+                value={newSort.columnId}
+                onChange={(e) => handleNewSortChange('columnId', e.target.value)}
+                className="flex-1 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+              >
+                <option value="">Field...</option>
+                {columns?.filter(column => 
+                  !localSorts.some(sort => sort.columnId === column.id)
+                ).map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.name}
+                  </option>
+                ))}
+              </select>
+              
+              <select
+                value={newSort.direction}
+                onChange={(e) => handleNewSortChange('direction', e.target.value)}
+                className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+              >
+                <option value="">Sort...</option>
+                {availableSortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {!showNewSortRow && (
+            <button
+              onClick={handleAddAnotherSort}
+              className="w-full py-2 px-3 text-xs text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors cursor-pointer"
             >
-              <option value="">Field...</option>
-              {columns?.map((column) => (
-                <option key={column.id} value={column.id}>
-                  {column.name}
-                </option>
-              ))}
-            </select>
-            
-            <select
-              value={newSort.direction}
-              onChange={(e) => handleNewSortChange('direction', e.target.value)}
-              className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
-            >
-              <option value="">Sort...</option>
-              {availableSortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              + Add another sort
+            </button>
+          )}
         </div>
       </div>
     </div>

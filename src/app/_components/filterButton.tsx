@@ -39,6 +39,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
   
   // Local state for existing filters to handle intermediate changes
   const [localFilters, setLocalFilters] = useState<Array<{columnId: string, operator: string, value: string}>>([]);
+  const [showNewFilterRow, setShowNewFilterRow] = useState(false);
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -206,6 +207,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
         value: '',
         type: '',
       });
+      setShowNewFilterRow(false);
     }
   };
 
@@ -217,6 +219,10 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
         filter: filter,
       });
     };
+  };
+
+  const handleAddAnotherFilter = () => {
+    setShowNewFilterRow(true);
   };
 
   return (
@@ -234,11 +240,15 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
 
       {/* Filter Dropdown */}
       <div
-        className={`absolute right-0 w-96 mt-2 p-2 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
+        className={`absolute right-0 w-96 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
           isOpen ? 'block' : 'hidden'
         }`}
       >
-        <div className="space-y-2">
+        <div className="space-y-3">
+          <div className="text-sm font-medium text-gray-600 border-b border-gray-100 pb-2">
+            {filters.length > 0 ? `In this view, show records where` : `No filter conditions are applied`}
+          </div>
+
           {/* Existing Filters */}
           {localFilters.map((filter, index) => {
             const foundCol = columns.find(c => c.id === filter.columnId);
@@ -296,44 +306,55 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
             );
           })}
           
-          {/* New Filter Row */}
-          <div className="flex items-center gap-1 border-t border-gray-100 pt-2">
-            <select
-              value={newFilter.columnId}
-              onChange={(e) => handleNewFilterChange('columnId', e.target.value)}
-              className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+          {/* New Filter Row (only shown when showNewFilterRow is true) */}
+          {showNewFilterRow && (
+            <div className="flex items-center gap-1 border-t border-gray-100 pt-2">
+              <select
+                value={newFilter.columnId}
+                onChange={(e) => handleNewFilterChange('columnId', e.target.value)}
+                className="w-24 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+              >
+                <option value="">Field...</option>
+                {columns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.name}
+                  </option>
+                ))}
+              </select>
+              
+              <select
+                value={newFilter.operator}
+                onChange={(e) => handleNewFilterChange('operator', e.target.value)}
+                className="w-32 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+              >
+                <option value="">Operator...</option>
+                {availableOperators.map((operator) => (
+                  <option key={operator.value} value={operator.value}>
+                    {operator.label}
+                  </option>
+                ))}
+              </select>
+              
+              {needsValueInput && (
+                <input
+                  type={newFilter.type}
+                  value={newFilter.value}
+                  onChange={(e) => handleNewFilterChange('value', e.target.value)}
+                  placeholder="Value..."
+                  className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+                />
+              )}
+            </div>
+          )}
+
+          {!showNewFilterRow && (
+            <button
+              onClick={handleAddAnotherFilter}
+              className="w-full py-2 px-3 text-xs text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors cursor-pointer"
             >
-              <option value="">Field...</option>
-              {columns.map((column) => (
-                <option key={column.id} value={column.id}>
-                  {column.name}
-                </option>
-              ))}
-            </select>
-            
-            <select
-              value={newFilter.operator}
-              onChange={(e) => handleNewFilterChange('operator', e.target.value)}
-              className="w-32 flex-shrink-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
-            >
-              <option value="">Operator...</option>
-              {availableOperators.map((operator) => (
-                <option key={operator.value} value={operator.value}>
-                  {operator.label}
-                </option>
-              ))}
-            </select>
-            
-            {needsValueInput && (
-              <input
-                type={newFilter.type}
-                value={newFilter.value}
-                onChange={(e) => handleNewFilterChange('value', e.target.value)}
-                placeholder="Value..."
-                className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
-              />
-            )}
-          </div>
+              + Add another filter
+            </button>
+          )}
         </div>
       </div>
     </div>
