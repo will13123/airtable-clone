@@ -142,7 +142,7 @@ export default function TableList({ baseId }: { baseId: string }) {
                   );
                 } else {
                   elements.push(
-                    <div key={`tab-${table.id}`} className="relative table-dropdown group">
+                    <div key={`tab-${table.id}`} className="relative table-dropdown group h-full">
                       <button
                         className={`
                           flex items-center gap-1 px-3 py-1.5 text-sm font-medium transition-all duration-200 h full
