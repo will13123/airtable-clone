@@ -393,13 +393,13 @@ useEffect(() => {
   if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
   return (
-    <div className="flex flex-col overflow-hidden flex-1 relative">
+    <div className="flex flex-col overflow-hidden h-[85vh] relative flex-1">
       
       {/* Main Table */}
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col h-[85vh]">
         <div 
           ref={scrollRef} 
-          className="h-[100dvh] w-full overflow-auto flex-1 border-gray-200 shadow-sm relative bg-gray-100"
+          className="w-full overflow-auto h-[85vh] border-gray-200 shadow-sm relative bg-gray-100"
         >
           <table
             className="h-full text-left rtl:text-right text-gray-500 relative"

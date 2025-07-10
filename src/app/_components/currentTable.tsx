@@ -160,9 +160,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
       }
     }, [views, currViewId, currentViewIdState, earliestView, setCurrView, tableId, name]);
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col h-full">
       {/* Top bar for table */}
-      <header className="flex justify-center items-center bg-white border-b border-gray-200 p-1 pr-5">
+      <header className="flex justify-center items-center bg-white border-b border-gray-200 p-1 pr-5 h-[5vh]">
         <div className="flex flex-1 justify-start items-center gap-2">
           <button
             onClick={toggleSidebar}
@@ -195,7 +195,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         </div>
       </header>
       {/*Main Box*/}
-      <div className="flex w-full flex-1">
+      <div className="flex w-full h-[85vh]">
         {/* Sidebar */}
         <div className={`h-full text-gray-600 flex-shrink-0 flex-col justify-between border-gray-200 border-r transition-all duration-200 ease-in-out ${isOpen ? 'overflow-visible' : 'overflow-hidden'} ${
           !sidebarOpen ? 'w-0' : 'w-[300px]'
