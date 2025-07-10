@@ -12,7 +12,7 @@ import SearchButton from "./searchButton";
 export default function CurrentTable({ tableId }: { tableId: string }) {
   const utils = api.useUtils();
   const { data: views } = api.table.getViews.useQuery({ tableId });
-  const { data: currViewId } = api.table.getCurrView.useQuery({ tableId });
+  const { data: currViewId, isLoading: currViewIsLoading } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
   const { data: tableColumns } = api.table.getColumns.useQuery({ tableId });
   const { data: hiddenColumns } = api.view.getHiddenColumns.useQuery(
@@ -136,7 +136,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     setOpenDropdownId(null);
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (openDropdownId && !(event.target as Element).closest('.view-dropdown')) {
@@ -151,7 +150,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   }, [openDropdownId]);
 
   useEffect(() => {
-      if (views && earliestView && currViewId === "") {
+      if (views && earliestView && currViewId === "" && !currViewIsLoading) {
         void setCurrView.mutate({ tableId, viewId: earliestView.id });
         setCurrentViewIdState(earliestView.id);
         setCurrentViewName("Default View");
@@ -159,7 +158,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         setCurrentViewIdState(currentViewIdState);
         setCurrentViewName(name);
       }
-    }, [views, currViewId, currentViewIdState, earliestView]);
+    }, [views, currViewId, currentViewIdState, earliestView, setCurrView, tableId, name]);
   return (
     <div className="flex flex-col h-full">
       {/* Top bar for table */}

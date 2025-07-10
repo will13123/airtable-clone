@@ -12,7 +12,7 @@ export default function TableList({ baseId }: { baseId: string }) {
   const queryClient = useQueryClient();
   const { data: tables, isLoading } = api.base.getTables.useQuery({ baseId });
   const { data: earliestTable } = api.base.earliestTable.useQuery({ baseId });
-  const { data: currTableId } = api.base.getCurrTable.useQuery({ baseId });
+  const { data: currTableId, isLoading: currTableIsLoading } = api.base.getCurrTable.useQuery({ baseId });
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
@@ -96,7 +96,7 @@ export default function TableList({ baseId }: { baseId: string }) {
 
   // Initialize current table if none is set
   useEffect(() => {
-    if (tables && tables.length > 0 && !currTableId && !setCurrTable.isPending) {
+    if (tables && tables.length > 0 && !currTableId && !setCurrTable.isPending && !currTableIsLoading) {
       const defaultTable = earliestTable ?? tables[0];
       if (defaultTable) {
         setCurrTable.mutate({ baseId, tableId: defaultTable.id });

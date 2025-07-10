@@ -1,4 +1,3 @@
-import { api } from '~/trpc/react';
 import { useState, useCallback } from "react";
 
 interface SearchButtonProps {
@@ -14,11 +13,9 @@ export default function SearchButton({
   numSearchResults, 
   currentMatchIndex, 
   onNavigateMatch,
-  viewId 
 }: SearchButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const utils = api.useUtils();
 
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
@@ -101,7 +98,7 @@ export default function SearchButton({
                 )}
                 <button
                   onClick={handleClearSearch}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <svg className="w-3 h-3 fill-current" viewBox="0 0 22 22">
                           <use href="/icon_definitions.svg#X"/>

@@ -304,29 +304,26 @@ useEffect(() => {
       }
     }, [cell?.type]);
 
+    // Helper function to get the correct background color
+    const getBackgroundColor = () => {
+      if (isCurrentMatch) return "bg-yellow-300";
+      if (isHighlighted) return "bg-yellow-200";
+      if (sortColumnIds?.includes(cell.columnId)) return "bg-orange-100";
+      if (filterColumnIds?.includes(cell.columnId)) return "bg-green-100";
+      return "bg-white";
+    };
+
+    const backgroundColorClass = getBackgroundColor();
+
     return (
       <div className="flex items-center h-full">
         {isFirstColumn && (
-          <div className={`text-center text-sm text-gray-400 w-[50px] h-full flex-shrink-0 flex items-center justify-center ${
-            sortColumnIds?.includes(cell.columnId) ? "bg-orange-100" : ""
-          } ${
-            filterColumnIds?.includes(cell.columnId) ? "bg-green-100" : ""
-          } ${
-            isCurrentMatch ? "bg-yellow-300" : 
-            isHighlighted ? "bg-yellow-200" : ""
-          }`}>
+          <div className={`text-center text-sm text-gray-400 w-[50px] h-full flex-shrink-0 flex items-center justify-center ${backgroundColorClass}`}>
             {rowNumber}
           </div>
         )}
         <input
-          className={`w-full h-full px-3 py-2 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
-            sortColumnIds?.includes(cell.columnId) ? "bg-orange-100" : ""
-          } ${
-            filterColumnIds?.includes(cell.columnId) ? "bg-green-100" : ""
-          } ${
-            isCurrentMatch ? "bg-yellow-300" : 
-            isHighlighted ? "bg-yellow-200" : "bg-white"
-          }`}
+          className={`w-full h-full px-3 py-2 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${backgroundColorClass}`}
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -425,19 +422,22 @@ useEffect(() => {
                     const isFiltered = filterColumnIds?.includes(header.column.id);
                     const isLast = index === headerGroup.headers.length - 1;
                     
+                    // Helper function to get header background color
+                    const getHeaderBackgroundColor = () => {
+                      if (isSorted) return "bg-orange-100";
+                      if (isFiltered) return "bg-green-100";
+                      return "bg-white";
+                    };
+                    
                     return (
                       <th
                         key={header.id}
                         colSpan={header.colSpan}
-                        className={`px-3 text-left text-sm font-medium border-b border-gray-200 bg-white ${
+                        className={`px-3 text-left text-sm font-medium border-b border-gray-200 ${
                           !isLast ? 'border-r border-gray-200' : ''
                         } ${
                           index === 0 ? 'sticky left-0 z-30 pl-[66px]' : ''
-                        } ${
-                          isSorted ? "bg-orange-100" : 
-                          isFiltered ? "bg-green-100" : 
-                          "bg-white"
-                        }`}
+                        } ${getHeaderBackgroundColor()}`}
                         style={{
                           width: "200px",
                           minWidth: "200px",
