@@ -128,7 +128,7 @@ export default function TableList({ baseId }: { baseId: string }) {
                 
                 if (editingTableId === table.id) {
                   elements.push(
-                    <div key={`edit-${table.id}`} className="bg-white border-l border-r border-gray-200 border-b-white rounded-t-md px-2 py-0.5 -mb-px z-10">
+                    <div key={`edit-${table.id}`} className="bg-white border-l border-r border-gray-200 border-b-white rounded-t-md px-2 py-0.5 -mb-px z-10 h-full">
                       <input
                         type="text"
                         value={editingTableName}
@@ -145,7 +145,7 @@ export default function TableList({ baseId }: { baseId: string }) {
                     <div key={`tab-${table.id}`} className="relative table-dropdown group">
                       <button
                         className={`
-                          flex items-center gap-1 px-3 py-1.5 text-sm font-medium transition-all duration-200 
+                          flex items-center gap-1 px-3 py-1.5 text-sm font-medium transition-all duration-200 h full
                           rounded-t-md border-l border-r relative -mb-px cursor-pointer 
                           ${currTableId === table.id 
                             ? "bg-white text-gray-900 border-gray-200 border-b-white z-10"
