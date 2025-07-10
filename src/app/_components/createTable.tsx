@@ -52,7 +52,7 @@ export default function CreateTable({ baseId }: { baseId: string }) {
       <div className="relative inline-block" ref={dropdownRef}>
         <button
           onClick={handleDropDown}
-          className="mb-1 py-1 px-2 text-sm text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
+          className="py-1 px-2 text-sm text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
         >
           <svg className="mr-1 mb-1 w-5 h-5 fill-current inline-block" viewBox="0 0 22 22">
             <use href="/icon_definitions.svg#Plus" />

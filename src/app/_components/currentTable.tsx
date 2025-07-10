@@ -163,7 +163,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   return (
     <div className="flex flex-col h-full">
       {/* Top bar for table */}
-      <header className="flex justify-center items-center bg-white border-b-1 border-solid border-neutral-300 p-1 pr-5">
+      <header className="flex justify-center items-center bg-white border-b border-gray-200 p-1 pr-5">
         <div className="flex flex-1 justify-start items-center gap-2">
           <button
             onClick={toggleSidebar}
@@ -175,7 +175,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           </button>
           <p className="text-sm font-semibold">{currentViewName}</p>
         </div>
-        <div className="flex-1"></div>
+        <div className="flex-2"></div>
         <div className="flex flex-row justify-between items-center flex-2 gap-2">
           <HideButton 
             columns={tableColumns ?? []} 
@@ -196,12 +196,12 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
         </div>
       </header>
       {/*Main Box*/}
-      <div className="flex w-full">
+      <div className="flex w-full h-full">
         {/* Sidebar */}
-        <div className={`text-gray-600 flex-shrink-0 flex-col justify-between border-neutral-500 border-r-1 transition-all duration-200 ease-in-out ${isOpen ? 'overflow-visible' : 'overflow-hidden'} ${
-          !sidebarOpen ? 'w-0' : 'w-[200px]'
+        <div className={`h-full text-gray-600 flex-shrink-0 flex-col justify-between border-gray-200 border-r transition-all duration-200 ease-in-out ${isOpen ? 'overflow-visible' : 'overflow-hidden'} ${
+          !sidebarOpen ? 'w-0' : 'w-[300px]'
         }`}>
-          <div className="p-2 flex flex-col w-[200px]">
+          <div className="p-2 flex flex-col w-full">
             <div className="w-full">
               <CreateView tableId={tableId} isOpen={isOpen} setOpen={setOpen}/>
             </div>
@@ -217,7 +217,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                   placeholder="Find a view..."
                   value={viewSearchTerm}
                   onChange={(e) => setViewSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 text-sm focus:outline-blue-500 rounded-md"
+                  className="w-full pl-10 pr-3 py-1.5 text-sm focus:outline-blue-500 rounded-md"
                 />
               </div>
             </div>
@@ -225,22 +225,22 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             {views?.filter(view => 
               view.name.toLowerCase().includes(viewSearchTerm.toLowerCase())
             ).map((view) => (
-              <div key={view.id} className="relative view-dropdown">
+              <div key={view.id} className="relative view-dropdown w-full">
                 {editingViewId === view.id ? (
-                  <div className="w-full p-2 bg-gray-100 rounded">
+                  <div className="w-full p-1.5 bg-gray-100 rounded">
                     <input
                       type="text"
                       value={editingViewName}
                       onChange={(e) => setEditingViewName(e.target.value)}
                       onBlur={() => handleRenameView(view.id, editingViewName)}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500"
                       autoFocus
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center group">
+                  <div className="flex items-center group w-full">
                     <button
-                      className={`flex-1 p-3 text-sm cursor-pointer text-left whitespace-nowrap transition-colors duration-200 flex items-center ${
+                      className={`flex-1 p-2 text-sm cursor-pointer text-left whitespace-nowrap transition-colors duration-200 flex items-center w-full ${
                         currViewId === view.id
                           ? 'bg-gray-100'
                           : 'hover:bg-gray-100 bg-white'

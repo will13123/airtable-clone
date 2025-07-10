@@ -61,13 +61,15 @@ export default function CreateColumn({ tableId, viewId, setHasInitialised }: { t
     <div className="relative inline-block" ref={dropdownRef}>
       <button
         onClick={handleColumnDropdown}
-        className="py-2 px-4 text-gray-600 hover:text-gray-700 focus:outline-none border-l-2 border-gray-300 cursor-pointer text-xl gap-2"
+        className="py-2 px-4 focus:outline-none cursor-pointer gap-2"
       >
-        Create Column
+        <svg className="w-4 h-4 fill-gray-600 hover:fill-gray-700 inline-block" viewBox="0 0 22 22">
+          <use href="/icon_definitions.svg#Plus"/>
+        </svg>
       </button>
       
       <div
-        className={`absolute left-0 bottom-full w-70 mb-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
+        className={`absolute left-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-10 ${
           columnDropdownIsOpen ? 'block' : 'hidden'
         }`}
       >
@@ -98,14 +100,6 @@ export default function CreateColumn({ tableId, viewId, setHasInitialised }: { t
                 {createColumn.isPending ? "Creating..." : "Create"}
               </button>
             </form>
-          </li>
-          <li>
-            <button
-              onClick={handleColumnDropdown}
-              className="block w-full rounded-md text-left px-4 py-2 hover:bg-gray-100 border-gray-200 border-1"
-            >
-              Close
-            </button>
           </li>
         </ul>
       </div>

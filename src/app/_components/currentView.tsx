@@ -13,7 +13,6 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import EditColumn from "./editColumn";
 import CreateRow from "./createRow";
 import CreateColumn from "./createColumn";
-import CreateManyRows from "./createManyRows";
 
 type RowType = { 
   id: string, 
@@ -320,13 +319,13 @@ useEffect(() => {
           </div>
         )}
         <input
-          className={`w-full h-full p-2 border-r border-gray-300 text-right text-sm rounded-none ${
+          className={`w-full h-full px-3 py-2 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
             sortColumnIds?.includes(cell.columnId) ? "bg-orange-100" : ""
           } ${
             filterColumnIds?.includes(cell.columnId) ? "bg-green-100" : ""
           } ${
             isCurrentMatch ? "bg-yellow-300" : 
-            isHighlighted ? "bg-yellow-200" : ""
+            isHighlighted ? "bg-yellow-200" : "bg-white"
           }`}
           value={value}
           onChange={handleChange}
@@ -397,49 +396,57 @@ useEffect(() => {
   if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden flex-1">
+    <div className="flex flex-col h-full overflow-hidden flex-1 relative">
       
       {/* Main Table */}
-      <div className="flex flex-col h-[80dvh]">
+      <div className="flex flex-col h-[100dvh]">
         <div 
           ref={scrollRef} 
-          className="h-[80dvh] w-full overflow-auto flex-1 border border-gray-200 border-b-1 relative"
+          className="h-[100dvh] w-full overflow-auto flex-1 border-gray-200 shadow-sm relative bg-gray-100"
         >
           <table
-            className="h-full text-left rtl:text-right text-gray-500 relative bg-white"
+            className="h-full text-left rtl:text-right text-gray-500 relative"
             style={{ 
               height: virtualizer.getTotalSize() + "px",
               tableLayout: "fixed",
+              borderCollapse: "separate",
+              borderSpacing: "0",
             }}
           >
             {/* Sticky Header */}
             <thead 
-              className="text-gray-400 sticky top-0 z-20 bg-white shadow-sm" 
+              className="text-gray-600 sticky top-0 z-20 bg-white" 
               style={{ width: "100%" }}
             >
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b">
+                <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header, index) => {
                     const isSorted = sortColumnIds?.includes(header.column.id);
                     const isFiltered = filterColumnIds?.includes(header.column.id);
+                    const isLast = index === headerGroup.headers.length - 1;
                     
                     return (
                       <th
                         key={header.id}
                         colSpan={header.colSpan}
-                        className={`p-2 text-left text-sm border-r ${
-                          index === 0 ? 'sticky left-0 z-30 pl-[58px]' : ''
+                        className={`px-3 text-left text-sm font-medium border-b border-gray-200 bg-white ${
+                          !isLast ? 'border-r border-gray-200' : ''
                         } ${
-                          isSorted ? "bg-orange-100" : isFiltered ? "bg-green-100" : "bg-white"
+                          index === 0 ? 'sticky left-0 z-30 pl-[66px]' : ''
+                        } ${
+                          isSorted ? "bg-orange-100" : 
+                          isFiltered ? "bg-green-100" : 
+                          "bg-white"
                         }`}
                         style={{
                           width: "200px",
                           minWidth: "200px",
                           maxWidth: "200px",
-                          height: '45px'
+                          height: '45px',
+                          maxHeight: '45px'
                         }}
                       >
-                        <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center justify-between w-full h-full">
                           <div className="inline-block">
                             {flexRender(header.column.columnDef.header, header.getContext())}
                           </div>
@@ -448,6 +455,24 @@ useEffect(() => {
                       </th>
                     );
                   })}
+                  <th
+                    className="px-3 text-left text-sm font-medium border-b border-l border-gray-200 bg-white z-30"
+                    style={{
+                      width: "60px",
+                      minWidth: "60px",
+                      maxWidth: "60px",
+                      height: '45px',
+                      maxHeight: '45px'
+                    }}
+                  >
+                    <div className="flex items-center justify-center w-full h-full">
+                      <CreateColumn 
+                        tableId={tableId} 
+                        viewId={viewId} 
+                        setHasInitialised={setHasInitialised}
+                      />
+                    </div>
+                  </th>
                 </tr>
               ))}
             </thead>
@@ -461,58 +486,63 @@ useEffect(() => {
                 return (
                   <tr
                     key={row.id}
-                    className="bg-white border border-gray-200"
+                    className="bg-white hover:bg-gray-50 transition-colors duration-150"
                     style={{
                       height: '45px',
                       transform: `translateY(${virtualRow.start}px)`,
                       position: 'absolute',
                       top: 0,
-                      left: -1,
+                      left: 0,
                       width: '100%',
                     }}
                   >
-                    {row.getVisibleCells().map((cell, index) => (
-                      <td 
-                        key={cell.id} 
-                        className={`border-r h-[45px] ${
-                          index === 0 ? 'sticky left-0 z-10 bg-white border-r-2 border-gray-300' : ''
-                        }`}
-                        style={{
-                          width: "200px",
-                          minWidth: "200px",
-                          maxWidth: "200px",
-                          height: '45px'
-                        }}
-                      >
-                        {flexRender(cell.column.columnDef.cell, {
-                          ...cell.getContext(),
-                        })}
-                      </td>
-                    ))}
+                    {row.getVisibleCells().map((cell, index) => {
+                      const isLast = index === row.getVisibleCells().length - 1;
+                      return (
+                        <td 
+                          key={cell.id} 
+                          className={`border-b border-gray-200 h-[45px] bg-white ${
+                            !isLast ? 'border-r border-gray-200' : ''
+                          } ${
+                            index === 0 ? 'sticky left-0 z-10 bg-white' : ''
+                          }`}
+                          style={{
+                            width: "200px",
+                            minWidth: "200px",
+                            maxWidth: "200px",
+                            height: '45px'
+                          }}
+                        >
+                          {flexRender(cell.column.columnDef.cell, {
+                            ...cell.getContext(),
+                          })}
+                        </td>
+                      );
+                    })}
+                    <td 
+                      className="border-l border-gray-200 h-[45px] bg-gray-100 z-10"
+                      style={{
+                        width: "60px",
+                        minWidth: "60px",
+                        maxWidth: "60px",
+                        height: '45px'
+                      }}
+                    />
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        
-        {/* Create row/column section*/}
-        <div className="flex flex-row">
-          <CreateRow 
-            tableId={tableId} 
-            viewId={viewId} 
-          />
-          <CreateColumn 
-            tableId={tableId} 
-            viewId={viewId} 
-            setHasInitialised={setHasInitialised}
-          />
-          <CreateManyRows 
-            tableId={tableId} 
-            viewId={viewId} 
-          />
-        </div>
       </div>
+      
+      <div className="absolute bottom-40 left-0 z-50 p-2">
+        <CreateRow 
+          tableId={tableId} 
+          viewId={viewId} 
+        />
+      </div>
+      
       {allRows.length === 0 && !isLoading && <p className="mt-2 text-center">No rows available</p>}
     </div>
   );
