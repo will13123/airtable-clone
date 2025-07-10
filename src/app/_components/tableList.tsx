@@ -145,10 +145,10 @@ export default function TableList({ baseId }: { baseId: string }) {
                     <div key={`tab-${table.id}`} className="relative table-dropdown group h-full">
                       <button
                         className={`
-                          flex items-center gap-1 px-3 py-2 text-sm font-medium transition-all duration-200 h full
+                          flex items-center gap-1 px-3.2 py-2 text-sm font-medium transition-all duration-200 h full
                           rounded-t-md border-l border-r relative -mb-px cursor-pointer 
                           ${currTableId === table.id 
-                            ? "bg-white text-gray-900 border-gray-200 border-b-white z-10"
+                            ? "bg-white text-gray-900 border-gray-200 border-b-white z-20"
                             : "bg-pink-50 text-gray-600 border-transparent hover:bg-pink-100 hover:text-gray-900 border-b border-b-gray-200"
                           }
                         `}
