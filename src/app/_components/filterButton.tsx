@@ -84,6 +84,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
   
   const updateFilter = api.view.updateFilter.useMutation({
     onSuccess: () => {
+      void utils.view.searchCells.invalidate({ viewId });
       void utils.view.getViewRows.invalidate({ viewId });
       void utils.view.getFilters.invalidate({ viewId });
       void queryClient.resetQueries({ 
@@ -97,6 +98,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
 
   const removeFilter = api.view.removeFilter.useMutation({
     onSuccess: () => {
+      void utils.view.searchCells.invalidate({ viewId });
       void utils.view.getViewRows.invalidate({ viewId });
       void utils.view.getFilters.invalidate({ viewId });
       void queryClient.resetQueries({ 

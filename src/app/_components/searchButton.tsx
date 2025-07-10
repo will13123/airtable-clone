@@ -1,3 +1,4 @@
+import { api } from '~/trpc/react';
 import { useState, useCallback } from "react";
 
 interface SearchButtonProps {
@@ -5,16 +6,19 @@ interface SearchButtonProps {
   numSearchResults: number;
   currentMatchIndex: number;
   onNavigateMatch: (index: number) => void;
+  viewId: string;
 }
 
 export default function SearchButton({ 
   onSearch, 
   numSearchResults, 
   currentMatchIndex, 
-  onNavigateMatch 
+  onNavigateMatch,
+  viewId 
 }: SearchButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const utils = api.useUtils();
 
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);

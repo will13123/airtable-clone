@@ -489,43 +489,138 @@ export const viewRouter = createTRPCRouter({
     }),
   
   searchCells: protectedProcedure
-    .input(z.object({ 
-      viewId: z.string(),
-      searchTerm: z.string()
-    }))
-    .query(async ({ input }) => {
-      if (!input.searchTerm.trim()) return []; 
-      if (input.searchTerm.length === 0) return [];
+  .input(z.object({ 
+    viewId: z.string(),
+    searchTerm: z.string()
+  }))
+  .query(async ({ input }) => {
+    if (!input.searchTerm.trim()) return []; 
+    if (input.searchTerm.length === 0) return [];
 
-      const view = await db.view.findUnique({
-        where: { id: input.viewId },
-        select: { tableId: true }
-      });
-
-      if (!view) {
-        throw new Error("View not found");
+    const view = await db.view.findUnique({
+      where: { id: input.viewId },
+      select: { 
+        tableId: true,
+        filters: true,
+        hiddenColumns: true
       }
+    });
 
-      const matchingCells = await db.cell.findMany({
-        where: {
-          row: {
-            tableId: view.tableId
-          },
-          value: {
-            contains: input.searchTerm,
-            mode: "insensitive"
+    if (!view) {
+      throw new Error("View not found");
+    }
+
+    const tableId = view.tableId;
+    const hiddenColumns = view.hiddenColumns ?? [];
+    
+    const columns = await db.column.findMany({
+      where: { tableId },
+    });
+
+    if (!columns.length) return [];
+    // Copy filter logic from above function
+    const filterOrders = view.filters?.map((filter) => {
+      const [columnId, operator, value] = filter.split(":");
+      return { columnId, operator, value };
+    }) ?? [];
+
+    const filterColumnIds = new Set(filterOrders.map(filter => filter.columnId));
+    
+    // Build joins for filtering
+    const columnAliasMap = new Map<string, string>();
+    let aliasIndex = 0;
+
+    const filterJoins = Array.from(filterColumnIds).map((columnId) => {
+      const alias = `f${aliasIndex}`;
+      if (columnId) columnAliasMap.set(columnId, alias);
+      aliasIndex++;
+      return `LEFT JOIN "Cell" as ${alias} ON r.id = ${alias}."rowId" AND ${alias}."columnId" = '${columnId}'`;
+    }).join(' ');
+
+    // Build filter where clauses
+    const filterWhereClauses = filterOrders.map((filter) => {
+      const alias = filter.columnId ? columnAliasMap.get(filter.columnId) : "";
+      const column = columns.find(col => col.id === filter.columnId);
+      const isNumber = column?.type === "number";
+      const value = filter.value ?? "";
+
+      switch (filter.operator) {
+        case "contains":
+          return `LOWER(${alias}.value) LIKE LOWER('%${value}%')`;
+        case "not_contains":
+          return `(${alias}.value IS NULL OR LOWER(${alias}.value) NOT LIKE LOWER('%${value}%'))`;
+        case "equal_to":
+          if (isNumber) {
+            return `CAST(${alias}.value AS FLOAT) = ${parseFloat(value)}`;
+          } else {
+            return `LOWER(${alias}.value) = LOWER('${value}')`;
           }
-        },
-        select: {
-          id: true,
-          value: true,
-          columnId: true,
-          rowId: true
-        }
-      });
+        case "not_equal_to":
+          if (isNumber) {
+            return `(${alias}.value IS NULL OR CAST(${alias}.value AS FLOAT) != ${parseFloat(value)})`;
+          } else {
+            return `(${alias}.value IS NULL OR LOWER(${alias}.value) != LOWER('${value}'))`;
+          }
+        case "is_empty":
+          return `(${alias}.value IS NULL OR ${alias}.value = '')`;
+        case "is_not_empty":
+          return `(${alias}.value IS NOT NULL AND ${alias}.value != '')`;
+        case "greater_than":
+          return `CAST(${alias}.value AS FLOAT) > ${parseFloat(value)}`;
+        case "greater_than_equal":
+          return `CAST(${alias}.value AS FLOAT) >= ${parseFloat(value)}`;
+        case "less_than":
+          return `CAST(${alias}.value AS FLOAT) < ${parseFloat(value)}`;
+        case "less_than_equal":
+          return `CAST(${alias}.value AS FLOAT) <= ${parseFloat(value)}`;
+        default:
+          return "1=1";
+      }
+    });
 
-      return matchingCells;
-    }),
+    // Build the base where clause
+    const baseWhereClause = `r."tableId" = '${tableId}'`;
+    const allWhereClauses = [baseWhereClause];
+
+    // Add filter conditions
+    if (filterWhereClauses.length > 0) {
+      allWhereClauses.push(...filterWhereClauses);
+    }
+
+    // Add search condition
+    allWhereClauses.push(`LOWER(c.value) LIKE LOWER('%${input.searchTerm}%')`);
+
+    if (hiddenColumns.length > 0) {
+      const hiddenColumnsStr = hiddenColumns.map(id => `'${id}'`).join(',');
+      allWhereClauses.push(`c."columnId" NOT IN (${hiddenColumnsStr})`);
+    }
+
+    const combinedWhereClause = allWhereClauses.join(' AND ');
+
+    // Build the search query
+    const searchQuery = `
+      SELECT DISTINCT
+        c.id,
+        c.value,
+        c."columnId",
+        c."rowId"
+      FROM "Row" AS r
+      ${filterJoins}
+      INNER JOIN "Cell" AS c ON r.id = c."rowId"
+      WHERE ${combinedWhereClause}
+      ORDER BY c."rowId", c."columnId"
+    `;
+
+    const matchingCells: {
+      id: string;
+      value: string;
+      columnId: string;
+      rowId: string;
+    }[] = await db.$queryRawUnsafe(searchQuery);
+
+    return matchingCells;
+  }),
+  
   getHiddenColumns: protectedProcedure
     .input(z.object({ viewId: z.string() }))
     .query(async ({ input }) => {

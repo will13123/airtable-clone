@@ -3,7 +3,7 @@
 import { api } from "~/trpc/react";
 import CreateView from "./createView";
 import CurrentView from "./currentView";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import SortButton from "./sortButton";
 import FilterButton from "./filterButton";
 import HideButton from "./hideButton";
@@ -28,6 +28,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
       void utils.table.getCurrView.invalidate({ tableId });
+      void utils.view.searchCells.invalidate({ viewId: currViewId });
     },
   });
   
@@ -49,18 +50,21 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const updateHiddenColumns = api.view.updateHiddenColumns.useMutation({
     onSuccess: () => {
       void utils.view.getHiddenColumns.invalidate({ viewId: currViewId ?? "" });
+      void utils.view.searchCells.invalidate({ viewId: currViewId });
     },
   });
   
   const hideAll = api.view.hideAll.useMutation({
     onSuccess: () => {
       void utils.view.getHiddenColumns.invalidate({ viewId: currViewId ?? "" });
+      void utils.view.searchCells.invalidate({ viewId: currViewId });
     },
   });
   
   const showAll = api.view.showAll.useMutation({
     onSuccess: () => {
       void utils.view.getHiddenColumns.invalidate({ viewId: currViewId ?? "" });
+      void utils.view.searchCells.invalidate({ viewId: currViewId });
     },
   });
   
@@ -78,9 +82,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   let { data: matchingCells } = api.view.searchCells.useQuery({ viewId: currViewId ?? "", searchTerm });
   if (searchTerm.length === 0) matchingCells = [];
   // Pass in num of search results
-  const handleSetNumSearchResults = useCallback((value: number) => {
-    setNumSearchResults(value);
-  }, []);
 
   // Reset current match index when search results change
   useEffect(() => {
@@ -190,6 +191,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             numSearchResults={numSearchResults}
             currentMatchIndex={currentMatchIndex}
             onNavigateMatch={handleNavigateMatch}
+            viewId={currViewId ?? ""}
           />
         </div>
       </header>
@@ -307,7 +309,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             tableId={tableId}
             currentMatchIndex={currentMatchIndex}
             matchingCells={matchingCells ?? []}
-            setNumMatchingCells={handleSetNumSearchResults}
+            setNumMatchingCells={setNumSearchResults}
           />
         )}
       </div>

@@ -155,35 +155,32 @@ export default function CurrentView({
   );
 
   // Build search index whenever rows or search results change
-  useEffect(() => {
-    if (!matchingCells.length || !allRows.length) {
-      setSearchMatches([]);
-      setNumMatchingCells(0);
-      return;
-    }
-    const visibleColumnIds = new Set(visibleColumns.map(col => col.id));
+useEffect(() => {
+  if (!matchingCells.length || !allRows.length) {
+    setSearchMatches([]);
+    setNumMatchingCells(0);
+    return;
+  }
 
-    const matches: SearchMatch[] = [];
-    
-    // Iterate through rows and check each cell- may be slow
-    allRows.forEach((row, rowIndex) => {
-      row.cells.forEach((cell) => {
-        if (cell.cellId && 
-            matchingCellIds.has(cell.cellId) && 
-            visibleColumnIds.has(cell.columnId)) {
-          matches.push({
-            cellId: cell.cellId,
-            rowIndex,
-            columnId: cell.columnId,
-            value: cell.value
-          });
-        }
-      });
+  setNumMatchingCells(matchingCells.length);
+
+  const matches: SearchMatch[] = [];
+  
+  allRows.forEach((row, rowIndex) => {
+    row.cells.forEach((cell) => {
+      if (cell.cellId && matchingCellIds.has(cell.cellId)) {
+        matches.push({
+          cellId: cell.cellId,
+          rowIndex,
+          columnId: cell.columnId,
+          value: cell.value
+        });
+      }
     });
+  });
 
-    setSearchMatches(matches);
-    setNumMatchingCells(matches.length);
-  }, [allRows, matchingCells, matchingCellIds, visibleColumns, setNumMatchingCells]);
+  setSearchMatches(matches);
+}, [allRows, matchingCells, matchingCellIds, setNumMatchingCells]);
 
   const updateCell = api.table.updateCell.useMutation({
     onSuccess: (data, variables: { cellId: string; value: string }) => {
@@ -206,6 +203,7 @@ export default function CurrentView({
           }))
         };
       });
+      void utils.view.searchCells.invalidate({ viewId });
     },
   });
 
