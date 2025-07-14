@@ -22,9 +22,13 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
             <div className="p-2 pt-4 flex items-center justify-center">
               <Link
                     href={'/dashboard'}
+                    className="group relative w-6 h-6 block"
                   >
-                <svg className="w-6 h-6 fill-current text-gray-700 cursor-pointer" viewBox="0 0 22 22">
+                <svg className="w-6 h-6 fill-current text-gray-700 cursor-pointer group-hover:opacity-0 transition-opacity duration-200" viewBox="0 0 22 22">
                   <use href="/icon_definitions.svg#Airtable"/>
+                </svg>
+                <svg className="w-6 h-6 fill-current text-gray-700 cursor-pointer absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200" viewBox="0 0 22 22">
+                  <use href="/icon_definitions.svg#ArrowLeft"/>
                 </svg>
               </Link>
             </div>
