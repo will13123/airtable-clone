@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 
-export default function BaseList({ userId }: { userId: string }) {
+export default function BaseList({ userId, baseIsCreating }: { userId: string, baseIsCreating: boolean }) {
   const utils = api.useUtils();
   const { data: bases, isLoading } = api.base.getAll.useQuery({ userId });
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export default function BaseList({ userId }: { userId: string }) {
           <Link href={`/base?id=${base.id}&name=${base.name}`}>
             <div className="bg-white rounded-lg border border-neutral-200 px-5 py-4 hover:shadow-md transition-shadow duration-200 cursor-pointer relative min-h-[100px]">
               <div className="flex items-center">
-                <div className="w-16 h-16 bg-red-900 opacity-90 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                <div className="w-16 h-16 bg-red-900 opacity-80 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
                   <span className="text-white text-2xl font-semibold">
                     {base.name.charAt(0).toUpperCase()}
                   </span>
@@ -115,6 +115,18 @@ export default function BaseList({ userId }: { userId: string }) {
           )}
         </div>
       ))}
+      {baseIsCreating === true && (
+        <div className="bg-white rounded-lg border border-neutral-200 px-5 py-4 relative min-h-[100px]">
+          <div className="flex items-center">
+            <div className="w-16 h-16 bg-gray-400 opacity-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+              <span className="text-white text-2xl font-semibold">
+                N
+              </span>
+            </div>
+              <span className="flex-1 pr-8">Initialising New Base...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

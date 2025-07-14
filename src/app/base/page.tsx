@@ -30,7 +30,7 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
             </div>
             
             <div className="p-2 flex items-center justify-center">
-              <svg className="w-6 h-6 fill-current text-gray-700 cursor-pointer" viewBox="0 0 22 22">
+              <svg className="w-6.5 h-6.5 fill-current text-gray-700 cursor-pointer" viewBox="0 0 22 22">
                 <use href="/icon_definitions.svg#Star"/>
               </svg>
             </div>
@@ -38,13 +38,13 @@ export default async function BasePage({ searchParams }: {searchParams: Promise<
           
           <div className="flex flex-col items-center pb-4 gap-2">
             <button className="flex items-center justify-center bg-white hover:bg-gray-300 text-neutral-600 w-8 h-8 rounded-full cursor-pointer transition-colors duration-150">
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 22 22">
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 22 22">
                 <use href="/icon_definitions.svg#Question"/>
               </svg>
             </button>
             
             <button className="flex items-center justify-center bg-white hover:bg-gray-300 text-neutral-600 w-8 h-8 rounded-full cursor-pointer transition-colors duration-150">
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 22 22">
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 22 22">
                 <use href="/icon_definitions.svg#Bell"/>
               </svg>
             </button>

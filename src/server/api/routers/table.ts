@@ -20,7 +20,7 @@ export const tableRouter = createTRPCRouter({
           sort: []
         },
       });
-      return table.id;
+      return table;
     }),
 
   getNameFromId: protectedProcedure

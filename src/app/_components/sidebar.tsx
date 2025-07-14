@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from 'react';
 import BaseList from './baseList';
 import CreateBase from './createBase';
 
 export default function Sidebar({ userId, isExpanded, setIsExpanded, isClicked }: { userId: string, isExpanded: boolean, setIsExpanded: (input: boolean) => void, isClicked: boolean}) {
+  const [baseIsCreating, setBaseIsCreating] = useState(false);
   return (   
     <div className="flex h-[93.5%] bg-gray-100 relative">
       {/* Sidebar */}
@@ -100,7 +102,7 @@ export default function Sidebar({ userId, isExpanded, setIsExpanded, isClicked }
             </div>
             
             <div className={`flex items-center ${(!isExpanded && !isClicked) ? 'justify-center' : 'pl-1'}`}>
-              <CreateBase isExpanded={isExpanded} isClicked={isClicked}/>
+              <CreateBase isExpanded={isExpanded} isClicked={isClicked} baseIsCreating={baseIsCreating} setBaseIsCreating={setBaseIsCreating}/>
             </div>
           </div>
         </div>
@@ -163,7 +165,7 @@ export default function Sidebar({ userId, isExpanded, setIsExpanded, isClicked }
                 <use href="/icon_definitions.svg#ChevronDown"/>
               </svg>
             </div>
-            <BaseList userId={userId}/>
+            <BaseList userId={userId} baseIsCreating={baseIsCreating}/>
           </section>
         </main>
       </div>

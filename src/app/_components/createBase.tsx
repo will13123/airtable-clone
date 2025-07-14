@@ -3,18 +3,82 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 
-export default function CreateBase({ isExpanded, isClicked }: { isExpanded: boolean, isClicked: boolean }) {
+export default function CreateBase({ isExpanded, isClicked, baseIsCreating, setBaseIsCreating }: { isExpanded: boolean, isClicked: boolean, baseIsCreating: boolean, setBaseIsCreating: (value: boolean) => void }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const createBase = api.base.create.useMutation({
-    onSuccess: async () => {
-      await utils.base.invalidate();
-      setName("");
-      setIsDropdownOpen(false);
+  onSuccess: async (newBase) => {
+    await utils.base.invalidate();
+    
+    // Create default table
+    createTable.mutate({ 
+      name: 'Default Table', 
+      baseId: newBase.id
+    });
+    
+    setName("");
+    setIsDropdownOpen(false);
+    setBaseIsCreating(false)
+  },
+});
+
+  const createTable = api.table.create.useMutation({
+  onSuccess: async (newTable) => {
+    await utils.table.invalidate();
+    
+    const tableId = newTable.id;
+    const baseId = newTable.baseId; 
+    
+    if (tableId) {
+      // Create default columns
+      createColumn.mutate({ 
+        tableId, 
+        type: "text", 
+        name: "Name" 
+      });
+      
+      createColumn.mutate({ 
+        tableId, 
+        type: "number", 
+        name: "Value" 
+      });
+      
+      createColumn.mutate({ 
+        tableId, 
+        type: "text", 
+        name: "Notes" 
+      });
+      
+      // Create default rows
+      createRow.mutate({ tableId });
+      createRow.mutate({ tableId });
+      createRow.mutate({ tableId });
+      createRow.mutate({ tableId });
+      createRow.mutate({ tableId });
+      
+      // Set as current table
+      setCurrTable.mutate({ baseId, tableId });
+    }
+  },
+});
+
+  const createRow = api.row.create.useMutation({
+    onSuccess: () => {
+      void utils.table.invalidate();
     },
+  });
+  
+  const createColumn = api.column.create.useMutation({
+    onSuccess: () => {
+      void utils.table.invalidate();
+    }
+  });
+
+  const setCurrTable = api.base.setCurrTable.useMutation({
+
   });
 
   useEffect(() => {
@@ -37,6 +101,7 @@ export default function CreateBase({ isExpanded, isClicked }: { isExpanded: bool
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
+      setBaseIsCreating(true)
       createBase.mutate({ name });
     }
   };
@@ -63,7 +128,7 @@ export default function CreateBase({ isExpanded, isClicked }: { isExpanded: bool
         )}
       </button>
 
-      {isDropdownOpen && (
+      {isDropdownOpen && (isExpanded || isClicked) && (
         <div className="absolute bottom-full mb-2 left-0 w-64 bg-white border border-neutral-200 rounded-lg shadow-lg z-20 p-4">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <input

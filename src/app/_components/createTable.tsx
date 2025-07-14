@@ -83,7 +83,8 @@ export default function CreateTable({ baseId }: { baseId: string }) {
                   setOpen(!isOpen);
                   if (name.length > 0) {
                     setCreating(true) 
-                    const tableId = await createTable.mutateAsync({ baseId, name });
+                    const table = await createTable.mutateAsync({ baseId, name });
+                    const tableId = table.id;
                     if (tableId) {             
                       // Create default columns and rows
                       await createColumn.mutateAsync({ 
