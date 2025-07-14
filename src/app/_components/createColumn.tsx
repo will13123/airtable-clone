@@ -81,20 +81,21 @@ export default function CreateColumn({ tableId, viewId, setHasInitialised }: { t
                 placeholder="Column Name"
                 value={columnName}
                 onChange={(e) => setColumnName(e.target.value)}
-                className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
+                className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border border-gray-200 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
-              <input
-                type="text"
-                placeholder="Enter 'text' or 'number'"
+              <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border-gray-200 border-1"
+                className="w-full rounded-md mb-2 bg-white px-4 py-2 text-black border border-gray-200 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                 required
-              />
+              >
+                <option value="text">Text Column</option>
+                <option value="number">Number Column</option>
+              </select>
               <button
                 type="submit"
-                className="rounded-md mb-4 bg-blue-400 text-white px-4 py-2 font-semibold transition hover:bg-blue-400 shadow cursor-pointer"
+                className="rounded-md mb-4 bg-blue-400 text-white px-4 py-2 font-semibold transition hover:bg-blue-500 shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={createColumn.isPending}
               >
                 {createColumn.isPending ? "Creating..." : "Create"}

@@ -260,6 +260,23 @@ useEffect(() => {
     }
   }, [currentMatchIndex, searchMatches, virtualizer]);
 
+  const createRow = api.row.create.useMutation({
+    onSuccess: () => {
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', viewId] 
+      });
+      void utils.view.getViewRows.invalidate({ viewId });
+    },
+  });
+
+  const handleCreateRowClick = useCallback(() => {
+    createRow.mutate({ tableId });
+    createRow.mutate({ tableId: '' });
+  }, [createRow, tableId]);
+
   // Editable Cell component
   const EditableCell = React.memo(({
     initialValue,
@@ -306,11 +323,11 @@ useEffect(() => {
 
     // Helper function to get the correct background color
     const getBackgroundColor = () => {
-      if (isCurrentMatch) return "bg-yellow-300";
-      if (isHighlighted) return "bg-yellow-200";
-      if (sortColumnIds?.includes(cell.columnId)) return "bg-orange-100";
-      if (filterColumnIds?.includes(cell.columnId)) return "bg-green-100";
-      return "bg-white";
+      if (isCurrentMatch) return "bg-yellow-300 group-hover:bg-yellow-400";
+      if (isHighlighted) return "bg-yellow-200 group-hover:bg-yellow-300";
+      if (sortColumnIds?.includes(cell.columnId)) return "bg-orange-100 group-hover:bg-orange-200";
+      if (filterColumnIds?.includes(cell.columnId)) return "bg-green-100 group-hover:bg-green-200";
+      return "";
     };
 
     const backgroundColorClass = getBackgroundColor();
@@ -402,7 +419,7 @@ useEffect(() => {
           className="w-full overflow-auto h-[85vh] border-gray-200 shadow-sm relative bg-gray-100"
         >
           <table
-            className="h-full text-left rtl:text-right text-gray-500 relative"
+            className="h-full text-left rtl:text-right text-gray-500 relative bg-white"
             style={{ 
               height: virtualizer.getTotalSize() + "px",
               tableLayout: "fixed",
@@ -478,7 +495,7 @@ useEffect(() => {
             </thead>
             <tbody 
               className="w-full relative" 
-              style={{ height: virtualizer.getTotalSize(), width: "100%" }}
+              style={{ height: virtualizer.getTotalSize() + 45, width: "100%" }}
             >
               {virtualRows.map((virtualRow) => {
                 const row = table.getRowModel().rows[virtualRow.index];
@@ -486,7 +503,7 @@ useEffect(() => {
                 return (
                   <tr
                     key={row.id}
-                    className="bg-white hover:bg-gray-50 transition-colors duration-150"
+                    className="group hover:bg-gray-100 transition-colors duration-150"
                     style={{
                       height: '45px',
                       transform: `translateY(${virtualRow.start}px)`,
@@ -501,10 +518,10 @@ useEffect(() => {
                       return (
                         <td 
                           key={cell.id} 
-                          className={`border-b border-gray-200 h-[45px] bg-white ${
+                          className={`border-b border-gray-200 h-[45px] ${
                             !isLast ? 'border-r border-gray-200' : ''
                           } ${
-                            index === 0 ? 'sticky left-0 z-10 bg-white' : ''
+                            index === 0 ? 'sticky left-0 z-10' : ''
                           }`}
                           style={{
                             width: "200px",
@@ -531,6 +548,70 @@ useEffect(() => {
                   </tr>
                 );
               })}
+              {/* Add Row */}
+              <tr 
+                className="group hover:bg-gray-100 transition-colors duration-150 cursor-pointer"
+                onClick={() => {
+                  handleCreateRowClick();
+                }}
+                style={{
+                  height: '45px',
+                  transform: `translateY(${virtualizer.getTotalSize()}px)`,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                }}
+              >
+                <td 
+                  className="border-b border-r border-gray-200 h-[45px] sticky left-0 z-10"
+                  style={{
+                    width: "200px",
+                    minWidth: "200px",
+                    maxWidth: "200px",
+                    height: '45px'
+                  }}
+                >
+                  <div className="flex items-center h-full">
+                    <div className="text-center text-sm text-gray-400 w-[50px] h-full flex-shrink-0 flex items-center justify-center">
+                      <button 
+                        className="p-1 hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreateRowClick();
+                        }}
+                        disabled={createRow.isPending}
+                      >
+                        <svg className="w-4 h-4 fill-gray-400 hover:fill-gray-600" viewBox="0 0 22 22">
+                          <use href="/icon_definitions.svg#Plus"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="w-full h-full px-3 py-2 text-right text-sm border-none"></div>
+                  </div>
+                </td>
+                {visibleColumns.slice(1).map((column) => (
+                  <td 
+                    key={`empty-${column.id}`}
+                    className="border-b border-gray-200 h-[45px]"
+                    style={{
+                      width: "200px",
+                      minWidth: "200px",
+                      maxWidth: "200px",
+                      height: '45px'
+                    }}
+                  />
+                ))}
+                <td 
+                  className="border-l border-gray-200 h-[45px] bg-gray-100 z-10"
+                  style={{
+                    width: "60px",
+                    minWidth: "60px",
+                    maxWidth: "60px",
+                    height: '45px'
+                  }}
+                />
+              </tr>
             </tbody>
           </table>
         </div>
