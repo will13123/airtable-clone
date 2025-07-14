@@ -99,7 +99,7 @@ export default function TableList({ baseId }: { baseId: string }) {
         setCurrTable.mutate({ baseId, tableId: defaultTable.id });
       }
     }
-  }, [tables, currTableId, earliestTable, baseId, setCurrTable]);
+  }, [tables, currTableId, earliestTable, baseId, setCurrTable, currTableIsLoading]);
 
   if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
 

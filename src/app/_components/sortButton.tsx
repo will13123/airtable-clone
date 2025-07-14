@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -28,8 +28,17 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
     type: '',
   });
 
-  const [localSorts, setLocalSorts] = useState<Array<{columnId: string, direction: string}>>([]);
   const [showNewSortRow, setShowNewSortRow] = useState(false);
+
+  // Use useMemo instead of useState + useEffect to derive localSorts
+  const localSorts = useMemo(() => {
+    return sorts
+      ? sorts.map((sort) => ({
+          columnId: sort.split(":")[0] ?? "",
+          direction: sort.split(":")[1] ?? ""
+        }))
+      : [];
+  }, [sorts]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -73,16 +82,6 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
     },
   });
 
-  useEffect(() => {
-    const formattedSorts = sorts
-    ? sorts.map((sort) => ({
-        columnId: sort.split(":")[0] ?? "",
-        direction: sort.split(":")[1] ?? ""
-      }))
-    : [];
-    setLocalSorts(formattedSorts);
-  }, [sorts]);
-
   const availableSortOptions = newSort.type === "number" ? numberSortOptions : textSortOptions;
 
   const isValidSort = (sort: {columnId: string, direction: string}) => {
@@ -94,21 +93,6 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
   };
 
   const handleSortChange = (sortIndex: number, field: 'columnId' | 'direction', value: string) => {
-    setLocalSorts(prev => {
-      const updated = prev.map((sort, index) => 
-        index === sortIndex ? { ...sort, [field]: value } : sort
-      );
-      
-      const updatedSort = updated[sortIndex];
-      if (!updatedSort) return updated;
-
-      if (field === 'columnId' && !columns?.find(col => col.id === value)) {
-        updatedSort.direction = '';
-      }
-      
-      return updated;
-    });
-
     const currentSort = localSorts[sortIndex];
     if (currentSort) {
       const updatedSort = { ...currentSort, [field]: value };
@@ -180,7 +164,7 @@ export default function Sortbutton({ viewId, tableId }: { viewId: string, tableI
     <div className="relative inline-block" ref={dropdownRef}>
       <button
         onClick={handleDropDown}
-        className={`rounded-xs hover:bg-gray-100 py-2 px-4 text-xs hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer gap-2 ${sorts.length > 0 ? 'bg-orange-100' : ''}`}
+        className={`rounded-md flex items-center hover:bg-gray-100 py-2 px-3 text-xs hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer ${sorts.length > 0 ? 'bg-orange-100' : ''}`}
       >
         <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#ArrowsDownUp"/>

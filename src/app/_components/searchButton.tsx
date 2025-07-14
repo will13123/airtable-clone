@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 interface SearchButtonProps {
   onSearch: (searchTerm: string) => void;
@@ -28,7 +28,7 @@ export default function SearchButton({
     setSearchTerm("");
     onSearch("");
     setIsOpen(false);
-  }, [onSearch]);
+  }, [onSearch, setIsOpen]);
 
   const handleNavigateNext = useCallback(() => {
     if (numSearchResults > 0) {
@@ -51,7 +51,7 @@ export default function SearchButton({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`p-2 text-gray-600 text-sm hover:bg-gray-100 rounded-xs hover:text-gray-700 focus:outline-none cursor-pointer`}
+        className={`px-2 py-1.5 text-gray-600 text-sm hover:bg-gray-100 rounded-md hover:text-gray-700 focus:outline-none cursor-pointer`}
       >
         <svg className="w-4 h-4 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#MagnifyingGlass"/>

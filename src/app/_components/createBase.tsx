@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 
-export default function CreateBase({ isExpanded, isClicked, baseIsCreating, setBaseIsCreating }: { isExpanded: boolean, isClicked: boolean, baseIsCreating: boolean, setBaseIsCreating: (value: boolean) => void }) {
+export default function CreateBase({ isExpanded, isClicked, setBaseIsCreating }: { isExpanded: boolean, isClicked: boolean, baseIsCreating: boolean, setBaseIsCreating: (value: boolean) => void }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

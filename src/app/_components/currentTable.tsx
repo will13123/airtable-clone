@@ -96,7 +96,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     if (views && earliestView && !currViewId && !currViewIsLoading) {
       void setCurrView.mutate({ tableId, viewId: earliestView.id });
     }
-  }, [views, currViewId, earliestView, currViewIsLoading, tableId]);
+  }, [views, currViewId, earliestView, currViewIsLoading, tableId, setCurrView]);
 
   const handleToggleColumn = (columnId: string) => {
     if (currViewId) {
@@ -181,8 +181,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
           </button>
           <p className="text-sm font-semibold">{currentViewName}</p>
         </div>
-        <div className="flex-3"></div>
-        <div className="flex flex-row justify-between items-center flex-2 gap-2">
+        <div className="flex-2"></div>
+        <div className="flex flex-row justify-between items-center flex-2 gap-1.5">
           <HideButton 
             columns={tableColumns ?? []} 
             hiddenColumns={hiddenColumns ?? []}
@@ -191,7 +191,38 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             onShowAll={handleShowAll}
           />
           <FilterButton viewId={currViewId ?? ""} tableId={tableId}/>
+          <button
+            className={`rounded-md flex items-center hover:bg-gray-100 py-2 px-3 hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer text-xs`}
+          >
+            <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#Group"/>
+            </svg>
+            Group
+          </button>
           <SortButton viewId={currViewId ?? ""} tableId={tableId}/>
+          <button
+            className={`rounded-md flex items-center hover:bg-gray-100 py-2 px-3 hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer text-xs`}
+          >
+            <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#PaintBucket"/>
+            </svg>
+            Colour
+          </button>
+          <button
+            className={`rounded-md hover:bg-gray-100 py-2 px-3 hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer text-xs`}
+          >
+            <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#RowHeightSmall"/>
+            </svg>
+          </button>
+          <button
+            className={`rounded-md flex items-center hover:bg-gray-100 py-2 px-3 hover:text-gray-700 focus:outline-none text-gray-600 cursor-pointer text-xs`}
+          >
+            <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#ArrowSquareOut"/>
+            </svg>
+            Share and sync
+          </button>
           <SearchButton 
             onSearch={handleSearch}
             numSearchResults={numSearchResults}

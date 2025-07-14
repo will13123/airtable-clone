@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { api } from '~/trpc/react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -54,16 +54,28 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
     type: '',
   });
   
-  // Local state for existing filters to handle intermediate changes
-  const [localFilters, setLocalFilters] = useState<Array<{columnId: string, operator: string, value: string}>>([]);
   const [showNewFilterRow, setShowNewFilterRow] = useState(false);
   
-  // Debounced values for filters that need debouncing (only value changes)
-  const debouncedLocalFilters = useDebounce(localFilters, 500);
+  // Use useMemo to derive formattedFilters from filters instead of useState + useEffect
+  const formattedFilters = useMemo(() => {
+    return filters
+      ? filters.map((filter) => ({
+          columnId: filter.split(":")[0] ?? "",
+          operator: filter.split(":")[1] ?? "",
+          value: filter.split(":")[2] ?? ""
+        }))
+      : [];
+  }, [filters]);
+  
+  // Local state for tracking intermediate changes (only for debouncing value changes)
+  const [localFilterValues, setLocalFilterValues] = useState<Record<number, string>>({});
+  
+  // Debounced values for filter values that need debouncing
+  const debouncedLocalFilterValues = useDebounce(localFilterValues, 500);
   const debouncedNewFilter = useDebounce(newFilter, 500);
   
   // Ref to track previous values to detect changes
-  const prevLocalFiltersRef = useRef<Array<{columnId: string, operator: string, value: string}>>([]);
+  const prevLocalFilterValuesRef = useRef<Record<number, string>>({});
   const prevNewFilterRef = useRef({columnId: '', operator: '', value: '', type: ''});
   
   useEffect(() => {
@@ -85,17 +97,6 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
   // Default values
   filters ??= [];
   columns ??= [];
-  const formattedFilters = filters
-    ? filters.map((filter) => ({
-        columnId: filter.split(":")[0] ?? "",
-        operator: filter.split(":")[1] ?? "",
-        value: filter.split(":")[2] ?? ""
-      }))
-    : [];
-
-  useEffect(() => {
-    setLocalFilters(formattedFilters);
-  }, [filters]);
 
   const availableOperators = newFilter.type === "number" ? numberOperators : textOperators;
   const needsValueInput = newFilter.operator && !['is_empty', 'is_not_empty'].includes(newFilter.operator);
@@ -148,44 +149,44 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
       !['is_empty', 'is_not_empty'].includes(filter.operator);
   };
 
-  // Effect to handle debounced updates for existing filters
+  // Effect to handle debounced updates for existing filter values
   useEffect(() => {
-    if (debouncedLocalFilters.length > 0) {
-      debouncedLocalFilters.forEach((debouncedFilter, index) => {
-        const prevFilter = prevLocalFiltersRef.current[index];
-        
-        // Only update if this specific filter changed
-        if (prevFilter && 
-            (prevFilter.value !== debouncedFilter.value || 
-             prevFilter.columnId !== debouncedFilter.columnId || 
-             prevFilter.operator !== debouncedFilter.operator)) {
-          
+    Object.entries(debouncedLocalFilterValues).forEach(([indexStr, value]) => {
+      const index = parseInt(indexStr);
+      const prevValue = prevLocalFilterValuesRef.current[index];
+      
+      // Only update if this specific filter value changed
+      if (prevValue !== value) {
+        const currentFilter = formattedFilters[index];
+        if (currentFilter) {
+          const updatedFilter = { ...currentFilter, value };
           const originalFilter = filters[index];
+          
           if (originalFilter) {
             // Check if the filter should be removed 
-            if (shouldRemoveFilter(debouncedFilter)) {
+            if (shouldRemoveFilter(updatedFilter)) {
               removeFilter.mutate({
                 viewId: viewId,
                 filter: originalFilter,
               });
-            } else if (isValidFilter(debouncedFilter)) {
+            } else if (isValidFilter(updatedFilter)) {
               // Update the filter if it's valid
               updateFilter.mutate({
                 viewId: viewId,
                 originalFilter: originalFilter,
-                columnId: debouncedFilter.columnId,
-                operator: debouncedFilter.operator,
-                value: debouncedFilter.value,
+                columnId: updatedFilter.columnId,
+                operator: updatedFilter.operator,
+                value: updatedFilter.value,
               });
             }
           }
         }
-      });
-    }
+      }
+    });
     
     // Update the ref after processing
-    prevLocalFiltersRef.current = debouncedLocalFilters;
-  }, [debouncedLocalFilters]);
+    prevLocalFilterValuesRef.current = debouncedLocalFilterValues;
+  }, [debouncedLocalFilterValues, formattedFilters, filters, removeFilter, viewId, updateFilter]);
 
   // Effect to handle debounced updates for new filter
   useEffect(() => {
@@ -215,63 +216,19 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
     
     // Update the ref after processing
     prevNewFilterRef.current = debouncedNewFilter;
-  }, [debouncedNewFilter]);
+  }, [debouncedNewFilter, updateFilter, viewId]);
 
   // This is for updating an existing filter
   const handleFilterChange = (filterIndex: number, field: 'columnId' | 'operator' | 'value', value: string) => {
-    setLocalFilters(prev => {
-      const updated = prev.map((filter, index) => 
-        index === filterIndex ? { ...filter, [field]: value } : filter
-      );
-      
-      const updatedFilter = updated[filterIndex];
-      if (!updatedFilter) return updated;
-
-      if (field === 'columnId' && !columns.find(col => col.id === value)) {
-        updatedFilter.operator = '';
-        updatedFilter.value = '';
-      }
-      
-      if (field === 'operator' && ['is_empty', 'is_not_empty'].includes(value)) {
-        updatedFilter.value = '';
-      }
-      
-      return updated;
-    });
-
-    // For immediate updates (columnId and operator changes), don't wait for debounce
-    if (field === 'columnId' || field === 'operator') {
-      const currentFilter = localFilters[filterIndex];
-      if (currentFilter) {
-        const updatedFilter = { ...currentFilter, [field]: value };
-        
-        if (field === 'columnId' && !columns.find(col => col.id === value)) {
-          updatedFilter.operator = '';
-          updatedFilter.value = '';
-        }
-        
-        if (field === 'operator' && ['is_empty', 'is_not_empty'].includes(value)) {
-          updatedFilter.value = '';
-        }
-
-        if (isValidFilter(updatedFilter)) {
-          const originalFilter = filters[filterIndex];
-          if (originalFilter) {
-            updateFilter.mutate({
-              viewId: viewId,
-              originalFilter: originalFilter, 
-              columnId: updatedFilter.columnId,
-              operator: updatedFilter.operator,
-              value: updatedFilter.value,
-            });
-          }
-        }
-      }
-    }
-    
-    // For value changes, handle immediate removal if value is cleared
+    // For value changes, update local state for debouncing
     if (field === 'value') {
-      const currentFilter = localFilters[filterIndex];
+      setLocalFilterValues(prev => ({
+        ...prev,
+        [filterIndex]: value
+      }));
+      
+      // Handle immediate removal if value is cleared
+      const currentFilter = formattedFilters[filterIndex];
       if (currentFilter) {
         const updatedFilter = { ...currentFilter, [field]: value };
         
@@ -285,7 +242,35 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
             });
           }
         }
-        // Otherwise, let the debounced effect handle the update
+      }
+      return;
+    }
+
+    // For immediate updates (columnId and operator changes), don't wait for debounce
+    const currentFilter = formattedFilters[filterIndex];
+    if (currentFilter) {
+      const updatedFilter = { ...currentFilter, [field]: value };
+      
+      if (field === 'columnId' && !columns.find(col => col.id === value)) {
+        updatedFilter.operator = '';
+        updatedFilter.value = '';
+      }
+      
+      if (field === 'operator' && ['is_empty', 'is_not_empty'].includes(value)) {
+        updatedFilter.value = '';
+      }
+
+      if (isValidFilter(updatedFilter)) {
+        const originalFilter = filters[filterIndex];
+        if (originalFilter) {
+          updateFilter.mutate({
+            viewId: viewId,
+            originalFilter: originalFilter, 
+            columnId: updatedFilter.columnId,
+            operator: updatedFilter.operator,
+            value: updatedFilter.value,
+          });
+        }
       }
     }
   };
@@ -357,7 +342,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
       {/* Filter Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`rounded-xs py-2 px-4 hover:bg-gray-100 text-xs hover:text-gray-700 text-gray-600 focus:outline-none cursor-pointer gap-2 ${filters.length > 0 ? 'bg-green-100' : ''}`}
+        className={`rounded-md flex items-center py-2 px-3 hover:bg-gray-100 text-xs hover:text-gray-700 text-gray-600 focus:outline-none cursor-pointer ${filters.length > 0 ? 'bg-green-100' : ''}`}
       >
         <svg className="w-4 h-4 mr-1 fill-current inline-block" viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#FunnelSimple"/>
@@ -377,11 +362,14 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
           </div>
 
           {/* Existing Filters */}
-          {localFilters.map((filter, index) => {
+          {formattedFilters.map((filter, index) => {
             const foundCol = columns.find(c => c.id === filter.columnId);
             const colType = foundCol?.type ?? '';
             const operatorsForCol = colType === "number" ? numberOperators : textOperators;
             const needsValue = filter.operator && !['is_empty', 'is_not_empty'].includes(filter.operator);
+            
+            // Use local value if it exists, otherwise use the filter value
+            const displayValue = localFilterValues[index] ?? filter.value;
             
             return (
               <div key={`filter-${index}`} className="flex items-center gap-1">
@@ -414,7 +402,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
                 {needsValue && (
                   <input
                     type={colType}
-                    value={filter.value}
+                    value={displayValue}
                     onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
                     placeholder="Value..."
                     className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
