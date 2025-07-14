@@ -8,12 +8,14 @@ export default function CreateTable({ baseId }: { baseId: string }) {
   const [name, setName] = useState("");
   const [isOpen, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [creating, setCreating] = useState(false);
   
   const createTable = api.table.create.useMutation({
     onSuccess: async () => {
       await utils.table.invalidate();
       await utils.base.getTables.invalidate({ baseId });
       setName("");
+      setCreating(false);
     },
   });
 
@@ -26,6 +28,12 @@ export default function CreateTable({ baseId }: { baseId: string }) {
   const createColumn = api.column.create.useMutation({
     onSuccess: () => {
       void utils.table.invalidate();
+    }
+  });
+
+  const setCurrTable = api.base.setCurrTable.useMutation({
+    onSuccess: () => {
+      void utils.base.getCurrTable.invalidate({ baseId });
     }
   });
 
@@ -53,11 +61,14 @@ export default function CreateTable({ baseId }: { baseId: string }) {
         <button
           onClick={handleDropDown}
           className="py-1 px-2 text-sm text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer gap-2"
-        >
+        > 
+        {creating === false && (
           <svg className="mr-1 mb-1 w-5 h-5 fill-current inline-block" viewBox="0 0 22 22">
             <use href="/icon_definitions.svg#Plus" />
           </svg>
-          Add or import
+        )}
+          
+          {(creating === true) ? `Creating...` : `Add or import`}
         </button>
         <div
           className={`absolute left-0 w-70 mt-2 p-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${
@@ -71,8 +82,9 @@ export default function CreateTable({ baseId }: { baseId: string }) {
                   e.preventDefault();
                   setOpen(!isOpen);
                   if (name.length > 0) {
+                    setCreating(true) 
                     const tableId = await createTable.mutateAsync({ baseId, name });
-                    if (tableId) {                      
+                    if (tableId) {             
                       // Create default columns and rows
                       await createColumn.mutateAsync({ 
                         tableId, 
@@ -96,6 +108,7 @@ export default function CreateTable({ baseId }: { baseId: string }) {
                       await createRow.mutateAsync({ tableId });
                       await createRow.mutateAsync({ tableId });
                       await createRow.mutateAsync({ tableId });
+                      await setCurrTable.mutateAsync({ baseId, tableId });
                     }
                   } else {
                     alert("Name must have at least one character");

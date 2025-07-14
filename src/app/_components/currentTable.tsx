@@ -15,6 +15,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   const { data: currViewId, isLoading: currViewIsLoading } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
   const { data: tableColumns } = api.table.getColumns.useQuery({ tableId });
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const { data: hiddenColumns } = api.view.getHiddenColumns.useQuery(
     { viewId: currViewId ?? "" },
     { enabled: !!currViewId }
@@ -27,9 +28,9 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   
   // Close search bar when switching views and tables
   useEffect(() => {
-      setSearchTerm("");
-      setSearchIsOpen(false)
-    }, [tableId, currViewId])
+    setSearchTerm("");
+    setSearchIsOpen(false)
+  }, [tableId, currViewId])
 
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
@@ -75,10 +76,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   });
   
   const currView = views?.find(v => v.id === currViewId);
-  let name = currView?.name;
-  const [currentViewIdState, setCurrentViewIdState] = useState<string>(currViewId ?? "");
-  const [currentViewName, setCurrentViewName] = useState(name);
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const currentViewName = currView?.name ?? "Default View";
   const [viewSearchTerm, setViewSearchTerm] = useState<string>("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [numSearchResults, setNumSearchResults] = useState(0);
@@ -93,6 +91,12 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
   useEffect(() => {
     setCurrentMatchIndex(0);
   }, [matchingCells]);
+
+  useEffect(() => {
+    if (views && earliestView && !currViewId && !currViewIsLoading) {
+      void setCurrView.mutate({ tableId, viewId: earliestView.id });
+    }
+  }, [views, currViewId, earliestView, currViewIsLoading, tableId]);
 
   const handleToggleColumn = (columnId: string) => {
     if (currViewId) {
@@ -142,6 +146,13 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     setOpenDropdownId(null);
   };
 
+  const handleViewClick = (viewId: string) => {
+    void setCurrView.mutate({ tableId, viewId });
+    // Reset search when switching views
+    setSearchTerm("");
+    setCurrentMatchIndex(0);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (openDropdownId && !(event.target as Element).closest('.view-dropdown')) {
@@ -155,16 +166,6 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     };
   }, [openDropdownId]);
 
-  useEffect(() => {
-      if (views && earliestView && currViewId === "" && !currViewIsLoading) {
-        void setCurrView.mutate({ tableId, viewId: earliestView.id });
-        setCurrentViewIdState(earliestView.id);
-        setCurrentViewName("Default View");
-      } else {
-        setCurrentViewIdState(currentViewIdState);
-        setCurrentViewName(name);
-      }
-    }, [views, currViewId, currentViewIdState, earliestView, setCurrView, tableId, name]);
   return (
     <div className="flex flex-col h-full">
       {/* Top bar for table */}
@@ -251,15 +252,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
                           ? 'bg-gray-100'
                           : 'hover:bg-gray-100 bg-white'
                       }`}
-                      onClick={() => {
-                        void setCurrView.mutate({ tableId, viewId: view.id });
-                        setCurrentViewIdState(view.id);
-                        setCurrentViewName(view.name);
-                        name = view.name;
-                        // Reset search when switching views
-                        setSearchTerm("");
-                        setCurrentMatchIndex(0);
-                      }}
+                      onClick={() => handleViewClick(view.id)}
                     >
                       <svg className="w-4 h-4 mr-2 fill-blue-500 inline-block" viewBox="0 0 22 22">
                         <use href="/icon_definitions.svg#GridFeature"/>
