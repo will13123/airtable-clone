@@ -21,9 +21,9 @@ export default function TableList({ baseId }: { baseId: string }) {
   const setCurrTable = api.base.setCurrTable.useMutation({
     onSuccess: (data, variables) => {
       const currTable = tables?.find(t => t.id === variables.tableId);
-      void utils.view.getViewRows.invalidate({ viewId: currTable?.currView });
       void utils.base.getCurrTable.invalidate({ baseId });
       void queryClient.resetQueries({ queryKey: ['viewRows', currTable?.currView] });
+      void utils.view.getViewRows.invalidate({ viewId: currTable?.currView });
     },
   });
 
@@ -60,9 +60,7 @@ export default function TableList({ baseId }: { baseId: string }) {
 
   const handleTableClick = (tableId: string) => {
     // Only set current table if it's different from the current one
-    if (currTableId !== tableId) {
       setCurrTable.mutate({ baseId, tableId });
-    }
   };
 
   const startEditing = (tableId: string, currentName: string) => {

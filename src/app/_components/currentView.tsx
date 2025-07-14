@@ -105,6 +105,13 @@ export default function CurrentView({
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
   const queryClient = useQueryClient();
   
+  // Reset state when viewId changes
+  useEffect(() => {
+    setHasInitialised(false);
+    setAllColumns([]);
+    setSearchMatches([]);
+  }, [viewId]);
+  
   // Infinite query for cursor-based pagination
   const {
     data: paginatedData,
@@ -121,8 +128,8 @@ export default function CurrentView({
         limit: PAGE_SIZE
       });
       
-      // Set columns on first fetch
-      if (!hasInitialized && result?.columns) {
+      // Only set columns if we haven't initialized for this specific view and have valid columns
+      if (!hasInitialized && result?.columns && result.columns.length > 0) {
         setAllColumns(result.columns);
         setHasInitialised(true);
       }
@@ -132,6 +139,7 @@ export default function CurrentView({
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
     enabled: true,
+    staleTime: 5000, // Prevent unnecessary refetches when switching rapidly
   });
 
   // Flatten all rows from pages
@@ -407,7 +415,10 @@ useEffect(() => {
     enableColumnResizing: false,
   });
 
-  if (isLoading) return <div className="text-center text-gray-600 text-xl">Loading...</div>;
+  // Enhanced loading check - ensure we have both data and columns initialized
+  if (isLoading || !hasInitialized || !allColumns.length) {
+    return <div className="text-center text-gray-600 text-xl">Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col overflow-hidden h-[85vh] relative flex-1">
