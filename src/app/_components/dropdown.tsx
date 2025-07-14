@@ -3,16 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 
-type DropdownProps = {
-  profileImage: string;
-  name: string;
-  email: string
-};
-
-export default function Dropdown({profileImage, name, email}: DropdownProps) {
+export default function Dropdown({profileImage, name, email, dashboard}: {profileImage: string, name: string, email: string, dashboard: boolean}) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="relative items-center justify-center">
+    <div className={`relative items-center justify-center`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="focus:outline-none cursor-pointer flex items-center justify-center"
@@ -26,7 +20,9 @@ export default function Dropdown({profileImage, name, email}: DropdownProps) {
         />
       </button>
       {isOpen && (
-        <div className="dropdown-menu absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 min-w-[200px]">
+        <div className={`dropdown-menu absolute bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 min-w-[200px] ${
+          dashboard ? 'right-0 mt-2' : 'left-0 mb-2 bottom-full'
+        }`}>
           <div className="text-left mb-3">
             <p className="font-semibold text-gray-800 text-sm">{name}</p>
             <p className="text-gray-600 text-xs">{email}</p>

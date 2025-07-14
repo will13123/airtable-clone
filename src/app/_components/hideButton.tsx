@@ -133,7 +133,7 @@ export default function HideButton({
               <button
                 onClick={handleHideAll}
                 disabled={allColumnsHidden}
-                className={`flex-1 px-3 py-1 text-xs rounded border transition-colors ${
+                className={`flex-1 px-3 py-1 text-xs rounded border transition-colors cursor-pointer ${
                   allColumnsHidden
                     ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                     : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700'
@@ -144,7 +144,7 @@ export default function HideButton({
               <button
                 onClick={handleShowAll}
                 disabled={allColumnsVisible}
-                className={`flex-1 px-3 py-1 text-xs rounded border transition-colors ${
+                className={`flex-1 px-3 py-1 text-xs rounded border transition-colors cursor-pointer ${
                   allColumnsVisible
                     ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                     : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700'

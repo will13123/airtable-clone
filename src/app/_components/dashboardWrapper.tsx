@@ -60,7 +60,7 @@ export default function DashboardWrapper({ name, profileImage, email, userId }: 
             </svg>
           </button>
           
-          <Dropdown profileImage={profileImage} name={name} email={email}/>
+          <Dropdown profileImage={profileImage} name={name} email={email} dashboard={true}/>
         </div>
       </header>
       <Sidebar userId={userId} isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} isClicked={isClicked}/>
