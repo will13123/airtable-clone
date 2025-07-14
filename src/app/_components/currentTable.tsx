@@ -96,7 +96,7 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     if (views && earliestView && !currViewId && !currViewIsLoading) {
       void setCurrView.mutate({ tableId, viewId: earliestView.id });
     }
-  }, [views, currViewId, earliestView, currViewIsLoading, tableId, setCurrView]);
+  }, [views, currViewId, earliestView, currViewIsLoading, tableId]);
 
   const handleToggleColumn = (columnId: string) => {
     if (currViewId) {

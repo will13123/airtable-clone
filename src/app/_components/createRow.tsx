@@ -26,7 +26,7 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
   });
 
   const createManyRows = api.row.createMany.useMutation({
-    onSuccess: () => {
+    onSuccess: async (result) => {
       void queryClient.resetQueries({ 
         queryKey: ['viewRows', viewId] 
       });
@@ -34,11 +34,9 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
         queryKey: ['viewRows', viewId] 
       });
       void utils.view.getViewRows.invalidate({ viewId });
-      setLoadingType(null);
+      if (result === true) setLoadingType(null)
+      if (result === false) setLoadingType('many');
     },
-    onError: () => {
-      setLoadingType(null);
-    }
   });
 
   const handleCreateRow = () => {
@@ -73,11 +71,8 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
     };
   }, []);
 
-  const isLoading = createRow.isPending || createManyRows.isPending;
-
   const getLoadingText = () => {
-    if (!isLoading) return "Add...";
-    return loadingType === 'single' ? "Creating 1 Row..." : "Creating 100K Rows...";
+    return loadingType === null ? "Add..." : loadingType === 'single' ? "Creating 1 Row..." : "Creating 100K Rows...";
   };
 
   return (
@@ -89,14 +84,14 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
             <button
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
               onClick={handleCreateRow}
-              disabled={isLoading}
+              disabled={loadingType !== null}
             >
               Create 1 Row
             </button>
             <button
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
               onClick={handleCreateManyRows}
-              disabled={isLoading}
+              disabled={loadingType !== null}
             >
               Create 100K Rows
             </button>
@@ -108,7 +103,7 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
         <button
           className="py-2 px-3 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer flex items-center justify-center"
           onClick={toggleDropdown}
-          disabled={isLoading}
+          disabled={loadingType !== null}
         >
           <svg className="w-4 h-4 fill-gray-600 hover:fill-gray-700" viewBox="0 0 22 22">
             <use href="/icon_definitions.svg#Plus"/>
@@ -120,7 +115,7 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
         <button
           className="py-2 px-3 text-gray-600 hover:text-gray-700 focus:outline-none cursor-pointer text-sm flex items-center"
           onClick={toggleDropdown}
-          disabled={isLoading}
+          disabled={loadingType !== null}
         >
           {getLoadingText()}
         </button>

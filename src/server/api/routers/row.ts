@@ -36,12 +36,13 @@ export const rowRouter = createTRPCRouter({
   createMany: protectedProcedure
   .input(z.object({ tableId: z.string() }))
   .mutation(async ({ input }) => {
-    if (input.tableId === '') return;
+    if (input.tableId === '') return false;
+    
     const table = await db.table.findUnique({
       where: { id: input.tableId },
       include: { base: true, columns: true }, 
     });
-    if (!table) return null;
+    if (!table) return { success: false, error: 'Table not found' };
 
     const BATCH_SIZE = 5000; 
     const TOTAL_ROWS = 100000;
@@ -100,8 +101,7 @@ export const rowRouter = createTRPCRouter({
         data: allCells,
       });
     }
-
-    return;
+    return true;
   }),
     
 });
