@@ -13,16 +13,22 @@ export default function TableList({ baseId }: { baseId: string }) {
   const { data: tables, isLoading } = api.base.getTables.useQuery({ baseId });
   const { data: earliestTable } = api.base.earliestTable.useQuery({ baseId });
   const { data: currTableId, isLoading: currTableIsLoading } = api.base.getCurrTable.useQuery({ baseId });
-
+  const [hasInitialised, setHasInitialised] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editingTableName, setEditingTableName] = useState<string>("");
 
   const setCurrTable = api.base.setCurrTable.useMutation({
     onSuccess: (data, variables) => {
+      setHasInitialised(false)
       const currTable = tables?.find(t => t.id === variables.tableId);
       void utils.base.getCurrTable.invalidate({ baseId });
-      void queryClient.resetQueries({ queryKey: ['viewRows', currTable?.currView] });
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', currTable?.currView] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', currTable?.currView] 
+      });
       void utils.view.getViewRows.invalidate({ viewId: currTable?.currView });
     },
   });
@@ -215,7 +221,7 @@ export default function TableList({ baseId }: { baseId: string }) {
           
           {currTableId && (
             <div className="border border-gray-200 border-t-0 bg-white h-[90vh] flex flex-col">
-              <CurrentTable tableId={currTableId} />
+              <CurrentTable tableId={currTableId} hasInitialised={hasInitialised} setHasInitialised={setHasInitialised}/>
             </div>
           )}
         </div>

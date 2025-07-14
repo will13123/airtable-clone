@@ -90,18 +90,21 @@ export default function CurrentView({
   currentMatchIndex,
   matchingCells,
   setNumMatchingCells,
+  hasInitialised,
+  setHasInitialised
 }: { 
   viewId: string, 
   tableId: string,
   currentMatchIndex: number,
   matchingCells: MatchingCell[],
   setNumMatchingCells: (value: number) => void,
+  hasInitialised: boolean,
+  setHasInitialised: (value: boolean) => void,
 }) {
   const utils = api.useUtils();
   const { data: hiddenColumns } = api.view.getHiddenColumns.useQuery({ viewId });
   
   const [allColumns, setAllColumns] = useState<Array<{id: string; name: string; type: string}>>([]);
-  const [hasInitialized, setHasInitialised] = useState(false);
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
   const queryClient = useQueryClient();
   
@@ -127,9 +130,8 @@ export default function CurrentView({
         cursor: pageParam,
         limit: PAGE_SIZE
       });
-      
-      // Only set columns if we haven't initialized for this specific view and have valid columns
-      if (!hasInitialized && result?.columns && result.columns.length > 0) {
+      // Only set columns if we haven't initialised for this specific view and have valid columns
+      if (!hasInitialised && result?.columns && result.columns.length > 0) {
         setAllColumns(result.columns);
         setHasInitialised(true);
       }
@@ -415,8 +417,8 @@ useEffect(() => {
     enableColumnResizing: false,
   });
 
-  // Enhanced loading check - ensure we have both data and columns initialized
-  if (isLoading || !hasInitialized || !allColumns.length) {
+  // Enhanced loading check - ensure we have both data and columns initialised
+  if (isLoading || !hasInitialised || !allColumns.length) {
     return <div className="text-center text-gray-600 text-xl">Loading...</div>;
   }
 

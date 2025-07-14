@@ -8,9 +8,11 @@ import SortButton from "./sortButton";
 import FilterButton from "./filterButton";
 import HideButton from "./hideButton";
 import SearchButton from "./searchButton";
+import { useQueryClient } from "@tanstack/react-query";
 
-export default function CurrentTable({ tableId }: { tableId: string }) {
+export default function CurrentTable({ tableId, hasInitialised, setHasInitialised }: { tableId: string, hasInitialised: boolean, setHasInitialised: (value: boolean) => void }) {
   const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const { data: views } = api.table.getViews.useQuery({ tableId });
   const { data: currViewId, isLoading: currViewIsLoading } = api.table.getCurrView.useQuery({ tableId });
   const { data: earliestView } = api.table.earliestView.useQuery({ tableId });
@@ -34,8 +36,16 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
 
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
+      setHasInitialised(false)
       void utils.table.getCurrView.invalidate({ tableId });
       void utils.view.searchCells.invalidate({ viewId: currViewId });
+      void queryClient.resetQueries({ 
+        queryKey: ['viewRows', currViewId] 
+      });
+      void queryClient.refetchQueries({ 
+        queryKey: ['viewRows', currViewId] 
+      });
+      void utils.view.getViewRows.invalidate({ viewId: currViewId });
     },
   });
   
@@ -340,6 +350,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             currentMatchIndex={currentMatchIndex}
             matchingCells={matchingCells ?? []}
             setNumMatchingCells={setNumSearchResults}
+            hasInitialised={hasInitialised}
+            setHasInitialised={setHasInitialised}
           />
         )}
       </div>
