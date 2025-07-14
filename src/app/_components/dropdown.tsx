@@ -12,29 +12,37 @@ type DropdownProps = {
 export default function Dropdown({profileImage, name, email}: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="relative">
+    <div className="relative items-center justify-center">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="focus:outline-none cursor-pointer"
+        className="focus:outline-none cursor-pointer flex items-center justify-center"
       >
         <img
           src={profileImage}
           alt={"Profile picture"}
-          width={40}
-          height={40}
-          className="rounded-full"
+          width={30}
+          height={30}
+          className="rounded-full object-cover"
         />
       </button>
       {isOpen && (
-        <div className="dropdown-menu absolute right-0 mt-2 bg-white border rounded shadow-lg justify-items-center justify-center gap 2 p-5">
-          <p>{name}</p>
-          <p>{email}</p>
-          <Link
-            href={"/api/auth/signout"}
-            className="text-black font-semibold no-underline transition "
-          >
-            Logout
-          </Link>
+        <div className="dropdown-menu absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 min-w-[200px]">
+          <div className="text-left mb-3">
+            <p className="font-semibold text-gray-800 text-sm">{name}</p>
+            <p className="text-gray-600 text-xs">{email}</p>
+          </div>
+          
+          <div className="border-t border-gray-200 pt-3 flex flex-row items-center">
+            <svg className="w-4 h-4 fill-gray-700 inline-block flex-shrink-0" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#SignOut"/>
+            </svg>
+            <Link
+              href={"/api/auth/signout"}
+              className="inline-block w-full text-left text-gray-700 pl-1 text-sm no-underline cursor-pointer"
+            >
+              Logout
+            </Link>
+          </div>
         </div>
       )}
     </div>

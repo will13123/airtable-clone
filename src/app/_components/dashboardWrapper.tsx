@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from 'react';
 import Image from "next/image";
 import Dropdown from "../_components/dropdown";
@@ -15,16 +14,18 @@ interface DashboardWrapperProps {
 
 export default function DashboardWrapper({ name, profileImage, email, userId }: DashboardWrapperProps) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarExpanded(!isSidebarExpanded);
-  };
+  const toggleClick = () => {
+    setIsClicked(!isClicked);
+    setIsSidebarExpanded(false);
+  }
 
   return (
     <div className="bg-neutral-300 h-full">
-      <header className="flex justify-center items-center bg-white border-b-2 border-solid border-neutral-300 p-2 pl-3 z-50 h-[7%]">
-        <div className="flex flex-1 justify-start items-center gap-2 cursor-pointer">
-          <ToggleButton onToggle={toggleSidebar} />
+      <header className="flex justify-center items-center bg-white border-b-1 border-solid border-neutral-300 py-1 px-3 z-50 h-[6.5%]">
+        <div className="flex flex-1 justify-start items-center gap-2">
+          <ToggleButton onToggle={toggleClick} />
           <Image
             src="/airtable-logo.webp" 
             alt="Airtable Logo"
@@ -34,16 +35,35 @@ export default function DashboardWrapper({ name, profileImage, email, userId }: 
           />
           <p className="text-lg font-bold">Airtable</p>
         </div>
-        <div className="flex-row justify-items-center justify-center">
-          <button className="bg-white hover:shadow-lg text-neutral-400 py-1 px-35 rounded-full border border-solid border-neutral-300">
-            Search
+        <div className="flex justify-center items-center">
+          <button className="flex items-center justify-between bg-white hover:shadow-md text-neutral-600 py-2 px-3 rounded-full border border-gray-100 shadow-sm cursor-pointer min-w-[330px]">
+            <div className="flex items-left gap-1">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 22 22">
+                <use href="/icon_definitions.svg#MagnifyingGlass"/>
+              </svg>
+              <span className='text-xs text-neutral-600'>Search...</span>
+            </div>
+            <span className="text-xs text-neutral-500 text-right">ctrl K</span>
           </button>
         </div>
-        <div className="flex-row justify-items-end flex-1">
+        <div className="flex justify-end flex-1 items-center gap-4">
+          <button className="flex items-center gap-1 bg-white hover:bg-gray-50 text-neutral-600 py-2 px-3 rounded-full shadow-sm cursor-pointer transition-colors duration-150">
+            <svg className="w-4 h-4 fill-current" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#Question"/>
+            </svg>
+            <span className="text-xs">Help</span>
+          </button>
+          
+          <button className="flex items-center justify-center bg-white hover:bg-gray-50 text-neutral-600 w-8 h-8 rounded-full shadow-sm cursor-pointer transition-colors duration-150">
+            <svg className="w-4 h-4 fill-current" viewBox="0 0 22 22">
+              <use href="/icon_definitions.svg#Bell"/>
+            </svg>
+          </button>
+          
           <Dropdown profileImage={profileImage} name={name} email={email}/>
         </div>
       </header>
-      <Sidebar userId={userId} isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} />
+      <Sidebar userId={userId} isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} isClicked={isClicked}/>
     </div>
   );
 }

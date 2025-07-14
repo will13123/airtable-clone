@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 
-export default function CreateBase({ isExpanded }: { isExpanded: boolean }) {
+export default function CreateBase({ isExpanded, isClicked }: { isExpanded: boolean, isClicked: boolean }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -42,19 +42,23 @@ export default function CreateBase({ isExpanded }: { isExpanded: boolean }) {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className={`flex items-center cursor-pointer hover:bg-gray-100 rounded transition-colors duration-200 ${
-          !isExpanded ? 'justify-center w-8 h-8' : 'w-full p-2'
+        className={`flex items-center justify-center cursor-pointer rounded transition-colors duration-200 ${
+          (isExpanded || isClicked) 
+            ? 'bg-blue-500 text-white hover:bg-blue-600' 
+            : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
+        } ${
+          (!isExpanded && !isClicked) ? 'w-5 h-5' : 'w-full px-3 py-2'
         }`}
       >
-        <svg className="w-5 h-5 fill-gray-600 flex-shrink-0" viewBox="0 0 22 22">
+        <svg className={`w-4 h-4 flex-shrink-0 ${(isExpanded || isClicked)  ? 'fill-white' : 'fill-gray-600'}`} viewBox="0 0 22 22">
           <use href="/icon_definitions.svg#Plus"/>
         </svg>
-        {isExpanded && (
+        {(isExpanded || isClicked) && (
           <span className="ml-3 text-sm whitespace-nowrap">
-            Create Base
+            Create
           </span>
         )}
       </button>
