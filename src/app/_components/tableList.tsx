@@ -20,7 +20,6 @@ export default function TableList({ baseId }: { baseId: string }) {
 
   const setCurrTable = api.base.setCurrTable.useMutation({
     onSuccess: (data, variables) => {
-      // Use the tableId from the mutation variables instead of state
       const currTable = tables?.find(t => t.id === variables.tableId);
       void utils.view.getViewRows.invalidate({ viewId: currTable?.currView });
       void utils.base.getCurrTable.invalidate({ baseId });

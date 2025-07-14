@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { api } from '~/trpc/react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -22,6 +22,23 @@ const numberOperators = [
   { value: 'is_not_empty', label: 'is not empty' }
 ];
 
+// Custom debounce hook
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 export default function FilterButton({ tableId, viewId }: { tableId: string, viewId: string }) {
   const queryClient = useQueryClient();
   const utils = api.useUtils();
@@ -40,6 +57,14 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
   // Local state for existing filters to handle intermediate changes
   const [localFilters, setLocalFilters] = useState<Array<{columnId: string, operator: string, value: string}>>([]);
   const [showNewFilterRow, setShowNewFilterRow] = useState(false);
+  
+  // Debounced values for filters that need debouncing (only value changes)
+  const debouncedLocalFilters = useDebounce(localFilters, 500);
+  const debouncedNewFilter = useDebounce(newFilter, 500);
+  
+  // Ref to track previous values to detect changes
+  const prevLocalFiltersRef = useRef<Array<{columnId: string, operator: string, value: string}>>([]);
+  const prevNewFilterRef = useRef({columnId: '', operator: '', value: '', type: ''});
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -116,6 +141,82 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
       (filter.value || ['is_empty', 'is_not_empty'].includes(filter.operator));
   };
 
+  // Check if a filter should be removed 
+  const shouldRemoveFilter = (filter: {columnId: string, operator: string, value: string}) => {
+    return filter.columnId && filter.operator && 
+      !filter.value && 
+      !['is_empty', 'is_not_empty'].includes(filter.operator);
+  };
+
+  // Effect to handle debounced updates for existing filters
+  useEffect(() => {
+    if (debouncedLocalFilters.length > 0) {
+      debouncedLocalFilters.forEach((debouncedFilter, index) => {
+        const prevFilter = prevLocalFiltersRef.current[index];
+        
+        // Only update if this specific filter changed
+        if (prevFilter && 
+            (prevFilter.value !== debouncedFilter.value || 
+             prevFilter.columnId !== debouncedFilter.columnId || 
+             prevFilter.operator !== debouncedFilter.operator)) {
+          
+          const originalFilter = filters[index];
+          if (originalFilter) {
+            // Check if the filter should be removed 
+            if (shouldRemoveFilter(debouncedFilter)) {
+              removeFilter.mutate({
+                viewId: viewId,
+                filter: originalFilter,
+              });
+            } else if (isValidFilter(debouncedFilter)) {
+              // Update the filter if it's valid
+              updateFilter.mutate({
+                viewId: viewId,
+                originalFilter: originalFilter,
+                columnId: debouncedFilter.columnId,
+                operator: debouncedFilter.operator,
+                value: debouncedFilter.value,
+              });
+            }
+          }
+        }
+      });
+    }
+    
+    // Update the ref after processing
+    prevLocalFiltersRef.current = debouncedLocalFilters;
+  }, [debouncedLocalFilters]);
+
+  // Effect to handle debounced updates for new filter
+  useEffect(() => {
+    const prevNewFilter = prevNewFilterRef.current;
+    
+    if (debouncedNewFilter.columnId && 
+        (prevNewFilter.value !== debouncedNewFilter.value || 
+         prevNewFilter.columnId !== debouncedNewFilter.columnId || 
+         prevNewFilter.operator !== debouncedNewFilter.operator) &&
+        isValidFilter(debouncedNewFilter)) {
+      
+      updateFilter.mutate({
+        viewId: viewId,
+        columnId: debouncedNewFilter.columnId,
+        operator: debouncedNewFilter.operator,
+        value: debouncedNewFilter.value,
+      });
+      
+      setNewFilter({
+        columnId: '',
+        operator: '',
+        value: '',
+        type: '',
+      });
+      setShowNewFilterRow(false);
+    }
+    
+    // Update the ref after processing
+    prevNewFilterRef.current = debouncedNewFilter;
+  }, [debouncedNewFilter]);
+
   // This is for updating an existing filter
   const handleFilterChange = (filterIndex: number, field: 'columnId' | 'operator' | 'value', value: string) => {
     setLocalFilters(prev => {
@@ -138,33 +239,57 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
       return updated;
     });
 
-    const currentFilter = localFilters[filterIndex];
-    if (currentFilter) {
-      const updatedFilter = { ...currentFilter, [field]: value };
-      
-      if (field === 'columnId' && !columns.find(col => col.id === value)) {
-        updatedFilter.operator = '';
-        updatedFilter.value = '';
-      }
-      
-      if (field === 'operator' && ['is_empty', 'is_not_empty'].includes(value)) {
-        updatedFilter.value = '';
-      }
+    // For immediate updates (columnId and operator changes), don't wait for debounce
+    if (field === 'columnId' || field === 'operator') {
+      const currentFilter = localFilters[filterIndex];
+      if (currentFilter) {
+        const updatedFilter = { ...currentFilter, [field]: value };
+        
+        if (field === 'columnId' && !columns.find(col => col.id === value)) {
+          updatedFilter.operator = '';
+          updatedFilter.value = '';
+        }
+        
+        if (field === 'operator' && ['is_empty', 'is_not_empty'].includes(value)) {
+          updatedFilter.value = '';
+        }
 
-      if (isValidFilter(updatedFilter)) {
-        const originalFilter = filters[filterIndex];
-        if (originalFilter) {
-          updateFilter.mutate({
-            viewId: viewId,
-            originalFilter: originalFilter, 
-            columnId: updatedFilter.columnId,
-            operator: updatedFilter.operator,
-            value: updatedFilter.value,
-          });
+        if (isValidFilter(updatedFilter)) {
+          const originalFilter = filters[filterIndex];
+          if (originalFilter) {
+            updateFilter.mutate({
+              viewId: viewId,
+              originalFilter: originalFilter, 
+              columnId: updatedFilter.columnId,
+              operator: updatedFilter.operator,
+              value: updatedFilter.value,
+            });
+          }
         }
       }
     }
+    
+    // For value changes, handle immediate removal if value is cleared
+    if (field === 'value') {
+      const currentFilter = localFilters[filterIndex];
+      if (currentFilter) {
+        const updatedFilter = { ...currentFilter, [field]: value };
+        
+        // If value is cleared and operator requires a value, remove the filter immediately
+        if (shouldRemoveFilter(updatedFilter)) {
+          const originalFilter = filters[filterIndex];
+          if (originalFilter) {
+            removeFilter.mutate({
+              viewId: viewId,
+              filter: originalFilter,
+            });
+          }
+        }
+        // Otherwise, let the debounced effect handle the update
+      }
+    }
   };
+
   // This is for handling a new filter being added
   const handleNewFilterChange = (field: 'columnId' | 'operator' | 'value' | 'type', value: string) => {
     let updated = { ...newFilter, [field]: value };
@@ -193,7 +318,8 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
 
     setNewFilter(updated);
 
-    if (isValidFilter(updated)) {
+    // For immediate updates (columnId and operator changes), don't wait for debounce
+    if ((field === 'columnId' || field === 'operator') && isValidFilter(updated)) {
       updateFilter.mutate({
         viewId: viewId,
         columnId: updated.columnId,
@@ -209,6 +335,7 @@ export default function FilterButton({ tableId, viewId }: { tableId: string, vie
       });
       setShowNewFilterRow(false);
     }
+    // For value changes, let the debounced effect handle it
   };
 
   const handleRemoveFilter = (filterIndex: number) => {

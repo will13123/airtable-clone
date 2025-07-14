@@ -1,11 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface SearchButtonProps {
   onSearch: (searchTerm: string) => void;
   numSearchResults: number;
   currentMatchIndex: number;
   onNavigateMatch: (index: number) => void;
-  viewId: string;
+  isOpen: boolean;
+  setIsOpen: (value: boolean) => void;
 }
 
 export default function SearchButton({ 
@@ -13,8 +14,9 @@ export default function SearchButton({
   numSearchResults, 
   currentMatchIndex, 
   onNavigateMatch,
+  isOpen,
+  setIsOpen
 }: SearchButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearch = useCallback((term: string) => {

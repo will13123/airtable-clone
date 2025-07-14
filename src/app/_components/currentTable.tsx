@@ -19,12 +19,18 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
     { viewId: currViewId ?? "" },
     { enabled: !!currViewId }
   );
-  
+  const [searchIsOpen, setSearchIsOpen] = useState(false); // For search dropdown
   const [isOpen, setOpen] = useState(false); // For the createView dropdown
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null); // For view dropdown menus
   const [editingViewId, setEditingViewId] = useState<string | null>(null); // For renaming views
   const [editingViewName, setEditingViewName] = useState<string>("");
   
+  // Close search bar when switching views and tables
+  useEffect(() => {
+      setSearchTerm("");
+      setSearchIsOpen(false)
+    }, [tableId, currViewId])
+
   const setCurrView = api.table.setCurrView.useMutation({
     onSuccess: () => {
       void utils.table.getCurrView.invalidate({ tableId });
@@ -190,7 +196,8 @@ export default function CurrentTable({ tableId }: { tableId: string }) {
             numSearchResults={numSearchResults}
             currentMatchIndex={currentMatchIndex}
             onNavigateMatch={handleNavigateMatch}
-            viewId={currViewId ?? ""}
+            isOpen={searchIsOpen}
+            setIsOpen={setSearchIsOpen}
           />
         </div>
       </header>

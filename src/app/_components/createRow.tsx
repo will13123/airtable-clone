@@ -6,6 +6,7 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
   const queryClient = useQueryClient();
   const utils = api.useUtils();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [loadingType, setLoadingType] = useState<'single' | 'many' | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const createRow = api.row.create.useMutation({
@@ -17,7 +18,11 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
         queryKey: ['viewRows', viewId] 
       });
       void utils.view.getViewRows.invalidate({ viewId });
+      setLoadingType(null);
     },
+    onError: () => {
+      setLoadingType(null);
+    }
   });
 
   const createManyRows = api.row.createMany.useMutation({
@@ -29,16 +34,22 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
         queryKey: ['viewRows', viewId] 
       });
       void utils.view.getViewRows.invalidate({ viewId });
+      setLoadingType(null);
     },
+    onError: () => {
+      setLoadingType(null);
+    }
   });
 
   const handleCreateRow = () => {
+    setLoadingType('single');
     createRow.mutate({ tableId });
     createRow.mutate({ tableId: '' });
     setIsDropdownOpen(false);
   };
 
   const handleCreateManyRows = () => {
+    setLoadingType('many');
     createManyRows.mutate({ tableId });
     createManyRows.mutate({ tableId: '' });
     setIsDropdownOpen(false);
@@ -64,6 +75,11 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
 
   const isLoading = createRow.isPending || createManyRows.isPending;
 
+  const getLoadingText = () => {
+    if (!isLoading) return "Add...";
+    return loadingType === 'single' ? "Creating 1 Row..." : "Creating 100K Rows...";
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Dropdown Menu */}
@@ -71,14 +87,14 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
         <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[150px]">
           <div className="py-1">
             <button
-              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
               onClick={handleCreateRow}
               disabled={isLoading}
             >
               Create 1 Row
             </button>
             <button
-              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
               onClick={handleCreateManyRows}
               disabled={isLoading}
             >
@@ -106,7 +122,7 @@ export default function CreateRow({ tableId, viewId }: { tableId: string, viewId
           onClick={toggleDropdown}
           disabled={isLoading}
         >
-          Add...
+          {getLoadingText()}
         </button>
       </div>
     </div>
