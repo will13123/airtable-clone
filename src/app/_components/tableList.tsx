@@ -125,13 +125,13 @@ export default function TableList({ baseId }: { baseId: string }) {
       {tables.length > 0 && (
         <div className="flex flex-col h-full">
           <div className="relative bg-pink-50 border-b border-gray-200 h-[4vh]">
-            <div className="flex items-end relative h-full">
+            <div className="flex items-end h-full">
               {tables.map((table, index) => {
                 const elements = [];
                 
                 if (editingTableId === table.id) {
                   elements.push(
-                    <div key={`edit-${table.id}`} className="bg-white border-l border-r border-gray-200 border-b-white rounded-t-md px-2 py-0.5 -mb-px z-10 h-full">
+                    <div key={`edit-${table.id}`} className="flex items-center bg-white border-l border-r border-t border-gray-200 border-b-white rounded-t-md px-3 py-2 -mb-px z-10 h-full">
                       <input
                         type="text"
                         value={editingTableName}
@@ -148,26 +148,25 @@ export default function TableList({ baseId }: { baseId: string }) {
                     <div key={`tab-${table.id}`} className="relative table-dropdown group h-full">
                       <button
                         className={`
-                          flex items-center gap-1 px-3 py-2 text-sm font-medium transition-all duration-200 h full
+                          flex items-center gap-1 px-3 py-2 text-sm font-medium
                           rounded-t-md border-l border-r relative -mb-px cursor-pointer 
                           ${currTableId === table.id 
-                            ? "bg-white text-gray-900 border-gray-200 border-b-white z-20 py-[8.5px]"
-                            : "bg-pink-50 text-gray-600 border-transparent hover:bg-pink-100 hover:text-gray-900 border-b border-b-gray-200"
+                            ? "bg-white text-gray-900 border-gray-200 border-b border-b-white z-20"
+                            : "bg-pink-50 text-gray-600 border-transparent hover:bg-pink-100 hover:text-gray-900"
                           }
                         `}
                         onClick={() => handleTableClick(table.id)}
                         disabled={setCurrTable.isPending}
                       >
-                        <span>{table.name}</span>
-                        <div className='flex-1'></div>
+                        <span className="whitespace-nowrap">{table.name}</span>
                         <button
-                          className="p-0.5 rounded cursor-pointer ml-1"
+                          className="p-0.5 rounded cursor-pointer ml-1 flex-shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenDropdownId(openDropdownId === table.id ? null : table.id);
                           }}
                         >
-                          <svg className="w-3.5 h-3.5 fill-gray-500 hover:fill-gray-600 inline-block" viewBox="0 0 22 22">
+                          <svg className="w-3.5 h-3.5 fill-gray-500 hover:fill-gray-600" viewBox="0 0 22 22">
                             <use href="/icon_definitions.svg#ChevronDown"/>
                           </svg>
                         </button>
