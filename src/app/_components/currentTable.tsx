@@ -246,7 +246,7 @@ export default function CurrentTable({ tableId, hasInitialised, setHasInitialise
       {/*Main Box*/}
       <div className="flex w-full h-[85vh]">
         {/* Sidebar */}
-        <div className={`h-full text-gray-600 flex-shrink-0 flex-col justify-between border-gray-200 border-r transition-all duration-200 ease-in-out ${isOpen ? 'overflow-visible' : 'overflow-hidden'} ${
+        <div className={`h-full text-gray-600 flex-shrink-0 flex-col justify-between border-gray-200 border-r transition-all duration-200 ease-in-out z-40 ${isOpen ? 'overflow-visible' : 'overflow-hidden'} ${
           !sidebarOpen ? 'w-0' : 'w-[300px]'
         }`}>
           <div className="p-2 flex flex-col w-full">

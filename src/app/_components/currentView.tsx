@@ -630,7 +630,7 @@ useEffect(() => {
         </div>
       </div>
       
-      <div className="absolute bottom-8 left-1 z-50 p-2">
+      <div className="absolute bottom-8 left-2 z-50 p-2">
         <CreateRow 
           tableId={tableId} 
           viewId={viewId} 
