@@ -7,7 +7,7 @@ export default function CreateColumn({ tableId, viewId, setHasInitialised }: { t
   const utils = api.useUtils();
 
   const [columnDropdownIsOpen, setColumnDropdownIsOpen] = useState(false);
-  const [type, setType] = useState("");
+  const [type, setType] = useState("text");
   const [columnName, setColumnName] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -49,8 +49,6 @@ export default function CreateColumn({ tableId, viewId, setHasInitialised }: { t
     if (type === "text" || type === "number") {
       createColumn.mutate({ tableId, type, name: columnName });
       createColumn.mutate({ tableId, type, name: ""});
-    } else {
-      alert("Enter a valid type");
     }
     
     setType("");
