@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 
 export default function CreateBase({ isExpanded, isClicked, setBaseIsCreating }: { isExpanded: boolean, isClicked: boolean, baseIsCreating: boolean, setBaseIsCreating: (value: boolean) => void }) {
@@ -8,6 +9,7 @@ export default function CreateBase({ isExpanded, isClicked, setBaseIsCreating }:
   const [name, setName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   
   const createBase = api.base.create.useMutation({
     onSuccess: async (newBase) => {
@@ -22,6 +24,7 @@ export default function CreateBase({ isExpanded, isClicked, setBaseIsCreating }:
       setName("");
       setIsModalOpen(false);
       setBaseIsCreating(false)
+      router.push(`/base?id=${newBase.id}&name=${newBase.name}`);
     },
   });
 
@@ -61,6 +64,7 @@ export default function CreateBase({ isExpanded, isClicked, setBaseIsCreating }:
         
         // Set as current table
         setCurrTable.mutate({ baseId, tableId });
+        
       }
     },
   });
