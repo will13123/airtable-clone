@@ -145,21 +145,21 @@ export default function TableList({ baseId }: { baseId: string }) {
                   );
                 } else {
                   elements.push(
-                    <div key={`tab-${table.id}`} className="relative table-dropdown group h-full">
+                    <div key={`tab-${table.id}`} className={`relative table-dropdown group h-full ${currTableId === table.id ? "border-b border-b-white -mb-px" : ""}`}>
                       <button
                         className={`
                           flex items-center gap-1 px-3 py-2 text-sm font-medium
                           rounded-t-md border-l border-r relative -mb-px cursor-pointer 
                           ${currTableId === table.id 
-                            ? "bg-white text-gray-900 border-gray-200 border-b border-b-white z-20"
-                            : "bg-pink-50 text-gray-600 border-transparent hover:bg-pink-100 hover:text-gray-900"
+                            ? "bg-white text-gray-900 border-gray-200 border-b border-b-white z-20 h-[calc(100%+1px)]"
+                            : "bg-pink-50 text-gray-600 border-transparent hover:bg-pink-100 h-full hover:text-gray-900"
                           }
                         `}
                         onClick={() => handleTableClick(table.id)}
                         disabled={setCurrTable.isPending}
                       >
                         <span className="whitespace-nowrap">{table.name}</span>
-                        <button
+                        <div
                           className="p-0.5 rounded cursor-pointer ml-1 flex-shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -169,7 +169,7 @@ export default function TableList({ baseId }: { baseId: string }) {
                           <svg className="w-3.5 h-3.5 fill-gray-500 hover:fill-gray-600" viewBox="0 0 22 22">
                             <use href="/icon_definitions.svg#ChevronDown"/>
                           </svg>
-                        </button>
+                        </div>
                       </button>
                       
                       {/* Dropdown menu */}
