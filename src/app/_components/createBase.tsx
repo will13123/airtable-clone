@@ -78,26 +78,8 @@ export default function CreateBase({ isExpanded, isClicked, setBaseIsCreating }:
   });
 
   const setCurrTable = api.base.setCurrTable.useMutation({
-
+    
   });
-
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsModalOpen(false);
-        setName("");
-      }
-    };
-
-    if (isModalOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isModalOpen]);
 
   // Handle clicking outside modal to close
   useEffect(() => {
