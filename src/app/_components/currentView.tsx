@@ -417,6 +417,17 @@ useEffect(() => {
     enableColumnResizing: false,
   });
 
+  if (!isLoading && !hasInitialised) {
+    // Reinitialise everything
+    void queryClient.invalidateQueries({ queryKey: ['viewRows', viewId] });
+    void utils.view.getViewRows.invalidate({ viewId });
+    
+    setAllColumns([]);
+    setSearchMatches([]);
+    
+    return <div className="text-center text-gray-600 text-xl">Reinitialising view...</div>;
+  }
+
   // Enhanced loading check - ensure we have both data and columns initialised
   if (isLoading || !hasInitialised || !allColumns.length) {
     return <div className="text-center text-gray-600 text-xl">Loading...</div>;
