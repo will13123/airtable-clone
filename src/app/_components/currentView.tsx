@@ -113,7 +113,11 @@ export default function CurrentView({
     setHasInitialised(false);
     setAllColumns([]);
     setSearchMatches([]);
+    void queryClient.invalidateQueries({ queryKey: ['viewRows', viewId] });
+    void utils.view.getViewRows.invalidate({ viewId });
   }, [viewId]);
+
+  
   
   // Infinite query for cursor-based pagination
   const {
@@ -143,6 +147,20 @@ export default function CurrentView({
     enabled: true,
     staleTime: 5000, // Prevent unnecessary refetches when switching rapidly
   });
+
+  useEffect(() => {
+  if (!isLoading && !hasInitialised && paginatedData?.pages?.length) {
+    // Check if we have valid data but haven't initialised
+    const firstPage = paginatedData.pages[0];
+    if (firstPage?.columns && firstPage.columns.length > 0) {
+      setAllColumns(firstPage.columns);
+      setHasInitialised(true);
+    } else {
+      // If no columns in first page, try to refetch
+      void queryClient.refetchQueries({ queryKey: ['viewRows', viewId] });
+    }
+  }
+}, [isLoading, hasInitialised, paginatedData, queryClient, viewId, setHasInitialised]);
 
   // Flatten all rows from pages
   const allRows = useMemo(() => {
@@ -417,20 +435,18 @@ useEffect(() => {
     enableColumnResizing: false,
   });
 
-  if (!isLoading && !hasInitialised) {
-    // Reinitialise everything
-    void queryClient.invalidateQueries({ queryKey: ['viewRows', viewId] });
-    void utils.view.getViewRows.invalidate({ viewId });
+  // if (!isLoading && !hasInitialised) {
+  //   // Reinitialise everything
+  //   void queryClient.invalidateQueries({ queryKey: ['viewRows', viewId] });
+  //   void utils.view.getViewRows.invalidate({ viewId });
     
-    setAllColumns([]);
-    setSearchMatches([]);
-    
-    return <div className="text-center text-gray-600 text-xl">Reinitialising view...</div>;
-  }
+  //   setAllColumns([]);
+  //   setSearchMatches([]);
+  // }
 
   // Enhanced loading check - ensure we have both data and columns initialised
-  if (isLoading || !hasInitialised || !allColumns.length) {
-    return <div className="text-center text-gray-600 text-xl">Loading...</div>;
+  if (isLoading || !hasInitialised || allColumns.length === 0) {
+    return <div className="text-center text-gray-600 text-xl">Loading...{`${isLoading}${hasInitialised}${allColumns.length}`}</div>;
   }
 
   return (
