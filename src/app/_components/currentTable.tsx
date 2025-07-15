@@ -240,6 +240,8 @@ export default function CurrentTable({ tableId, hasInitialised, setHasInitialise
             onNavigateMatch={handleNavigateMatch}
             isOpen={searchIsOpen}
             setIsOpen={setSearchIsOpen}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
           />
         </div>
       </header>

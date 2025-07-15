@@ -7,6 +7,8 @@ interface SearchButtonProps {
   onNavigateMatch: (index: number) => void;
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
 }
 
 export default function SearchButton({ 
@@ -15,9 +17,10 @@ export default function SearchButton({
   currentMatchIndex, 
   onNavigateMatch,
   isOpen,
-  setIsOpen
+  setIsOpen,
+  searchTerm,
+  setSearchTerm,
 }: SearchButtonProps) {
-  const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
