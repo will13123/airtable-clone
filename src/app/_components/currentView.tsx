@@ -446,7 +446,7 @@ useEffect(() => {
 
   // Enhanced loading check - ensure we have both data and columns initialised
   if (isLoading || !hasInitialised || allColumns.length === 0) {
-    return <div className="text-center text-gray-600 text-xl">Loading...{`${isLoading}${hasInitialised}${allColumns.length}`}</div>;
+    return <div className="text-center text-gray-600 text-xl">Loading...</div>;
   }
 
   return (
